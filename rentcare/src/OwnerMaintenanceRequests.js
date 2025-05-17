@@ -1,30 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useLocation, useNavigate } from 'react-router-dom'; // Added useNavigate
-import './OwnerMaintenanceRequests.css'; // Link to new CSS file
+import { useLocation, useNavigate } from 'react-router-dom';
+import './OwnerMaintenanceRequests.css';
+
+// Define API_BASE_URL using environment variable
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const OwnerMaintenanceRequests = () => {
   const [requests, setRequests] = useState([]);
   const [property, setProperty] = useState(null);
   const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(true); // Added for loading state
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   const location = useLocation();
-  const navigate = useNavigate(); // Initialize useNavigate
-  const { propertyId, propertyName: passedPropertyName, flatNo: filterFlatNo } = location.state || {}; // Get propertyId, propertyName, and optional flatNo
+  const navigate = useNavigate();
+  const { propertyId, propertyName: passedPropertyName, flatNo: filterFlatNo } = location.state || {};
 
   useEffect(() => {
-    // Initial load animations
     const elementsToAnimate = document.querySelectorAll('.maintenance-animate-on-load');
     elementsToAnimate.forEach((el, index) => {
       const delay = parseInt(el.dataset.delay || "0", 10);
-      setTimeout(() => {
-        el.classList.add('is-visible');
-      }, delay + index * 50); 
+      if (!el.classList.contains('is-visible')) {
+        setTimeout(() => {
+          el.classList.add('is-visible');
+        }, delay + index * 50);
+      }
     });
-  }, [isLoading, requests]); // Re-run if isLoading or requests change
+  }, [isLoading, requests]);
 
   useEffect(() => {
+    if (!API_BASE_URL) {
+      setMessage('API URL is not configured. Cannot fetch data.');
+      console.error("REACT_APP_API_BASE_URL is not set");
+      setIsLoading(false);
+      return;
+    }
     if (propertyId) {
       fetchPropertyAndRequests();
     } else {
@@ -32,11 +42,11 @@ const OwnerMaintenanceRequests = () => {
       setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [propertyId]);
+  }, [propertyId]); // API_BASE_URL doesn't need to be a dependency here
 
   const fetchPropertyAndRequests = () => {
     setIsLoading(true);
-    axios.get(`http://localhost:5001/properties/${propertyId}`)
+    axios.get(`${API_BASE_URL}/properties/${propertyId}`) // MODIFIED URL
       .then((response) => {
         const prop = response.data;
         setProperty(prop);
@@ -51,12 +61,11 @@ const OwnerMaintenanceRequests = () => {
           tenantName: tenantMap[req.flatNo] || 'N/A (Tenant may be deleted)',
         }));
 
-        // If filterFlatNo is provided, filter requests for that specific tenant
         if (filterFlatNo) {
-            fetchedRequests = fetchedRequests.filter(req => req.flatNo === filterFlatNo);
+          fetchedRequests = fetchedRequests.filter(req => req.flatNo === filterFlatNo);
         }
 
-        setRequests(fetchedRequests);
+        setRequests(fetchedRequests.sort((a, b) => new Date(b.date) - new Date(a.date))); // Sort by date desc
         setIsLoading(false);
       })
       .catch((error) => {
@@ -67,27 +76,30 @@ const OwnerMaintenanceRequests = () => {
       });
   };
 
-  const handleStatusChange = (reqId, newStatus) => { // Use reqId (unique ID from DB)
-    const updated = requests.map(req => 
+  const handleStatusChange = (reqId, newStatus) => {
+    const updated = requests.map(req =>
       req.id === reqId ? { ...req, status: newStatus } : req
     );
     setRequests(updated);
   };
 
-  const handleRemarksChange = (reqId, newRemarks) => { // Use reqId
+  const handleRemarksChange = (reqId, newRemarks) => {
     const updated = requests.map(req =>
       req.id === reqId ? { ...req, remarks: newRemarks } : req
     );
     setRequests(updated);
   };
 
-  const handleDelete = async (reqIdToDelete) => { // Use reqId
+  const handleDelete = async (reqIdToDelete) => {
     if (!property || !window.confirm("Are you sure you want to delete this maintenance request?")) return;
+    if (!API_BASE_URL) {
+        setMessage('API URL is not configured.'); console.error("REACT_APP_API_BASE_URL is not set"); return;
+    }
     setIsLoading(true);
-    
+
     const updatedMaintenanceRequestsForDB = (property.maintenanceRequests || [])
-        .filter(req => req.id !== reqIdToDelete) // Filter out by unique ID
-        .map(({ tenantName, ...rest }) => rest); // tenantName is UI only
+      .filter(req => req.id !== reqIdToDelete)
+      .map(({ tenantName, ...rest }) => rest);
 
     const updatedProperty = {
       ...property,
@@ -95,13 +107,10 @@ const OwnerMaintenanceRequests = () => {
     };
 
     try {
-      await axios.put(`http://localhost:5001/properties/${propertyId}`, updatedProperty);
-      
-      // Update local state for UI based on the same unique ID
+      await axios.put(`${API_BASE_URL}/properties/${propertyId}`, updatedProperty); // MODIFIED URL
       const updatedUIRequests = requests.filter(req => req.id !== reqIdToDelete);
       setRequests(updatedUIRequests);
-      setProperty(updatedProperty); 
-
+      setProperty(updatedProperty);
       setMessage('Maintenance request deleted successfully.');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -109,12 +118,15 @@ const OwnerMaintenanceRequests = () => {
       setMessage(`Failed to delete request: ${error.response?.data?.message || error.message}`);
       setTimeout(() => setMessage(''), 5000);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
   const handleSaveAllChanges = async () => {
     if (!property) return;
+    if (!API_BASE_URL) {
+        setMessage('API URL is not configured.'); console.error("REACT_APP_API_BASE_URL is not set"); return;
+    }
     setIsLoading(true);
     try {
       const maintenanceRequestsForDB = requests.map(({ tenantName, ...rest }) => rest);
@@ -123,12 +135,11 @@ const OwnerMaintenanceRequests = () => {
         maintenanceRequests: maintenanceRequestsForDB,
       };
 
-      await axios.put(`http://localhost:5001/properties/${propertyId}`, updatedProperty);
-      setProperty(updatedProperty); 
-      // Re-fetch to ensure data consistency, including tenant names if they could change
-      // Or, if confident, just update local `requests` state directly with the saved versions
-      // For simplicity, re-fetching after save ensures everything is synced.
-      await fetchPropertyAndRequests(); 
+      await axios.put(`${API_BASE_URL}/properties/${propertyId}`, updatedProperty); // MODIFIED URL
+      // Instead of full re-fetch, update local property, or trust local state if backend ensures atomicity
+      setProperty(updatedProperty);
+      // If you want to be absolutely sure and re-fetch with tenant names:
+      // await fetchPropertyAndRequests();
       setMessage('All maintenance request changes saved successfully.');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -136,22 +147,34 @@ const OwnerMaintenanceRequests = () => {
       setMessage(`Failed to save changes: ${error.response?.data?.message || error.message}`);
       setTimeout(() => setMessage(''), 5000);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
-
-  if (!propertyId) {
+  
+  if (!API_BASE_URL && !isLoading && message.includes('API URL is not configured')) {
     return (
         <div className="maintenance-page-wrapper">
-            <div className="maintenance-container maintenance-animate-on-load">
-                <p className="page-message error">No property selected. Please go back.</p>
-                <button className="dashboard-button" onClick={() => navigate(-1)}>Go Back</button>
+            <div className="maintenance-container maintenance-animate-on-load is-visible">
+                 <p className="page-message error">{message}</p>
+                 <button className="dashboard-button" onClick={() => navigate(-1)}>Go Back</button>
             </div>
         </div>
     );
   }
-  
-  const pageTitle = filterFlatNo 
+
+
+  if (!propertyId && !isLoading) {
+    return (
+      <div className="maintenance-page-wrapper">
+        <div className="maintenance-container maintenance-animate-on-load is-visible">
+          <p className="page-message error">No property selected. Please go back.</p>
+          <button className="dashboard-button" onClick={() => navigate(-1)}>Go Back</button>
+        </div>
+      </div>
+    );
+  }
+
+  const pageTitle = filterFlatNo
     ? `Maintenance for Flat ${filterFlatNo} (${requests.find(r => r.flatNo === filterFlatNo)?.tenantName || 'Tenant'})`
     : `All Maintenance for ${property?.name || passedPropertyName || 'Property'}`;
 
@@ -168,38 +191,37 @@ const OwnerMaintenanceRequests = () => {
             </button>
             <h2 className="maintenance-main-title">{pageTitle}</h2>
           </div>
-           {/* Save All button appears if there are requests */}
-           {requests.length > 0 && !isLoading && (
-             <button
-                onClick={handleSaveAllChanges}
-                className="dashboard-button primary save-all-btn"
-                disabled={isLoading}
+          {requests.length > 0 && !isLoading && (
+            <button
+              onClick={handleSaveAllChanges}
+              className="dashboard-button primary save-all-btn"
+              disabled={isLoading}
             >
-                {isLoading ? <span className="spinner"></span> : 'Save All Changes'}
+              {isLoading ? <span className="spinner"></span> : 'Save All Changes'}
             </button>
-           )}
+          )}
         </header>
 
-        {message && (
-            <p className={`dashboard-message ${message.toLowerCase().includes('error') || message.toLowerCase().includes('failed') ? 'error' : 'success'} maintenance-animate-on-load`} data-delay="100">
-                {message}
-            </p>
+        {message && !message.includes('API URL is not configured') && (
+          <p className={`dashboard-message ${message.toLowerCase().includes('error') || message.toLowerCase().includes('failed') ? 'error' : 'success'} maintenance-animate-on-load`} data-delay="100">
+            {message}
+          </p>
         )}
-        
+
         {isLoading && (
-            <div className="loading-container"><span className="loading-spinner-large"></span><p className="loading-text">Loading requests...</p></div>
+          <div className="loading-container"><span className="loading-spinner-large"></span><p className="loading-text">Loading requests...</p></div>
         )}
 
         {!isLoading && requests.length === 0 && (
-            <div className="no-data-container maintenance-animate-on-load" data-delay="150">
-                <svg className="no-data-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-                </svg>
-                <p className="no-data-text">No maintenance requests found.</p>
-                <p className="no-data-subtext">
-                    {filterFlatNo ? `This tenant hasn't submitted any requests yet.` : `No requests submitted for this property.`}
-                </p>
-            </div>
+          <div className="no-data-container maintenance-animate-on-load" data-delay="150">
+            <svg className="no-data-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+            </svg>
+            <p className="no-data-text">No maintenance requests found.</p>
+            <p className="no-data-subtext">
+              {filterFlatNo ? `This tenant hasn't submitted any requests yet.` : `No requests submitted for this property.`}
+            </p>
+          </div>
         )}
 
         {!isLoading && requests.length > 0 && (
@@ -208,7 +230,7 @@ const OwnerMaintenanceRequests = () => {
               <thead>
                 <tr>
                   <th>#</th>
-                  {!filterFlatNo && <th>Tenant</th>} {/* Show Tenant Name only if not filtering by flat */}
+                  {!filterFlatNo && <th>Tenant</th>}
                   {!filterFlatNo && <th>Flat No</th>}
                   <th>Description</th>
                   <th>Status</th>
@@ -219,7 +241,7 @@ const OwnerMaintenanceRequests = () => {
               </thead>
               <tbody>
                 {requests.map((req, index) => (
-                  <tr key={req.id || index}> {/* Backend should provide unique req.id */}
+                  <tr key={req.id || `req-${index}`}> {/* Ensure unique key */}
                     <td data-label="#">{index + 1}</td>
                     {!filterFlatNo && <td data-label="Tenant">{req.tenantName}</td>}
                     {!filterFlatNo && <td data-label="Flat No">{req.flatNo}</td>}
@@ -227,7 +249,7 @@ const OwnerMaintenanceRequests = () => {
                     <td data-label="Status">
                       <select
                         value={req.status}
-                        onChange={(e) => handleStatusChange(req.id, e.target.value)} // Use req.id
+                        onChange={(e) => handleStatusChange(req.id, e.target.value)}
                         className={`status-dropdown status-${req.status?.toLowerCase().replace(/\s+/g, '-')}`}
                         disabled={isLoading}
                       >
@@ -239,7 +261,7 @@ const OwnerMaintenanceRequests = () => {
                     <td data-label="Remarks">
                       <textarea
                         value={req.remarks || ''}
-                        onChange={(e) => handleRemarksChange(req.id, e.target.value)} // Use req.id
+                        onChange={(e) => handleRemarksChange(req.id, e.target.value)}
                         placeholder="Add remarks..."
                         className="remarks-textarea"
                         rows="2"
@@ -249,7 +271,7 @@ const OwnerMaintenanceRequests = () => {
                     <td data-label="Submitted">{new Date(req.date).toLocaleDateString()}</td>
                     <td data-label="Action">
                       <button
-                        onClick={() => handleDelete(req.id)} // Use req.id
+                        onClick={() => handleDelete(req.id)}
                         className="dashboard-button delete-request-btn"
                         disabled={isLoading}
                       >
