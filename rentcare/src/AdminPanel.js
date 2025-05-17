@@ -82,7 +82,7 @@ function AdminPanel() {
   const fetchOwners = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("https://backend-im2n.onrender.com/users?role=owner");
+      const res = await fetch("https://backend-two-phi-15.vercel.app/users?role=owner");
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to fetch owners");
@@ -107,7 +107,7 @@ function AdminPanel() {
     const ownerData = { role: "owner", email, password };
 
     try {
-      const url = editId ? `https://backend-im2n.onrender.com/users/${editId}` : "https://backend-im2n.onrender.com/users";
+      const url = editId ? `https://backend-two-phi-15.vercel.app/users/${editId}` : "https://backend-two-phi-15.vercel.app/users";
       const method = editId ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -150,7 +150,7 @@ function AdminPanel() {
     if (!window.confirm("Are you sure you want to delete this owner?")) return;
     setIsLoading(true);
     try {
-      const res = await fetch(`https://backend-im2n.onrender.com/users/${id}`, { method: "DELETE" });
+      const res = await fetch(`https://backend-two-phi-15.vercel.app/users/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to delete owner.");
