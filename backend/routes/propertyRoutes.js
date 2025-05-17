@@ -59,7 +59,13 @@ router.put("/:id", validateObjectId('id'), async (req, res) => {
     // For example, if a new tenant is in updateData.tenants without an _id, Mongoose adds it.
     // If an existing tenant (with _id) is modified, Mongoose updates it.
     
-    const updatedProperty = await Property.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
+    const updatedProperty = await Property.findByIdAndUpdate(
+  req.params.id,
+  updateData,
+  { new: true, runValidators: true }
+);
+res.json(updatedProperty);
+
     if (!updatedProperty) return res.status(404).json({ message: "Property not found" });
     res.json(updatedProperty);
   } catch (err) {
