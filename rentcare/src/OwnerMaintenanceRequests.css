@@ -1,0 +1,228 @@
+/* --- OwnerMaintenanceRequests.css --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+.maintenance-page-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+  background-color: #f0f4f8;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+  color: #334155;
+}
+
+.maintenance-container {
+  width: 100%;
+  max-width: 1300px; /* Can be wide for tables */
+  background-color: #ffffff;
+  padding: 30px 40px;
+  margin-top: 20px;
+  margin-bottom: 40px;
+  border-radius: 16px;
+  box-shadow: 0 15px 45px rgba(0, 10, 30, 0.1);
+}
+
+.maintenance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #FFDAB9; /* Softer peach border */
+}
+
+.maintenance-title-group {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.back-button { /* Reusing from OwnerViewTenants */
+  background: transparent; border: none; color: #FF7F50; cursor: pointer;
+  padding: 8px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; transition: background-color 0.2s ease;
+}
+.back-button:hover { background-color: #fff0e6; }
+.back-button svg { width: 24px; height: 24px; }
+
+.maintenance-main-title {
+  font-size: clamp(1.6rem, 3.5vw, 2rem);
+  color: #1e3a8a;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Using .dashboard-button for consistency */
+.dashboard-button {
+  padding: 10px 20px; border: none; border-radius: 8px; font-size: 0.95rem;
+  font-weight: 600; cursor: pointer; transition: all 0.2s ease-in-out;
+  text-transform: capitalize; display: inline-flex; align-items: center; justify-content: center;
+  letter-spacing: 0.3px;
+}
+.dashboard-button:disabled {
+  background-color: #cbd5e0 !important; color: #64748b !important;
+  cursor: not-allowed; box-shadow: none !important; transform: none !important;
+}
+.dashboard-button .spinner {
+  width: 16px; height: 16px; border-width: 2px;
+  border-top-color: currentColor;
+}
+.dashboard-button.primary .spinner { border-top-color: #fff; }
+
+.save-all-btn { /* Specifically for the save all button */
+  background-color: #10b981; /* Green for save */
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+.save-all-btn:hover:not(:disabled) {
+  background-color: #059669;
+  box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+}
+
+.dashboard-message { /* From OwnerDashboard.css */
+  text-align: center; margin: 0 auto 25px auto; max-width: 700px;
+  font-size: 0.95rem; font-weight: 500; padding: 12px 15px; border-radius: 8px;
+}
+.dashboard-message.success { color: #059669; background-color: #d1fae5; border: 1px solid #a7f3d0; }
+.dashboard-message.error { color: #991b1b; background-color: #fee2e2; border: 1px solid #fecaca; }
+.page-message.error { /* For "No property selected" */
+    color: #991b1b; background-color: #fee2e2; border: 1px solid #fecaca; 
+    padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px;
+}
+
+
+/* Maintenance Table Styles */
+.maintenance-table-wrapper { overflow-x: auto; margin-top: 20px;}
+.maintenance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.maintenance-table th, .maintenance-table td {
+  border: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+.maintenance-table th {
+  background-color: #f1f5f9;
+  color: #334155;
+  font-weight: 600;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+.maintenance-table tr:nth-child(even) { background-color: #f8fafc; }
+.maintenance-table tr:hover { background-color: #eff6ff; }
+
+.maintenance-table .description-cell {
+  white-space: pre-wrap; /* Allow description to wrap */
+  min-width: 200px; /* Give description some space */
+  max-width: 350px;
+}
+
+.maintenance-table select,
+.remarks-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.maintenance-table select:focus,
+.remarks-textarea:focus {
+  border-color: #FF7F50;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.15);
+}
+.remarks-textarea {
+  min-height: 40px; /* Start with a small height */
+  resize: vertical; /* Allow vertical resize */
+}
+
+/* Status Dropdown Specifics for Maintenance Table */
+.status-dropdown { /* General class for select */
+  /* Styles from select above are applied */
+}
+.status-pending { background-color: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.status-in-progress { background-color: #ffedd5; color: #9a3412; border-color: #fed7aa; } /* Amber/Orange */
+.status-resolved { background-color: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+
+
+.delete-request-btn { /* Using .dashboard-button class for base */
+  background-color: #ef4444; /* Red */
+  color: white;
+  padding: 6px 10px !important; /* Override general dashboard button padding */
+  font-size: 0.8rem !important; /* Override general */
+}
+.delete-request-btn:hover:not(:disabled) { background-color: #dc2626; }
+
+/* --- Loading/No Data States (reusing from OwnerDashboard for consistency) --- */
+.loading-container {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 50px 20px; background-color: #fff; border-radius: 12px;
+    margin-top: 20px; box-shadow: 0 8px 25px rgba(0, 10, 30, 0.06);
+}
+.loading-spinner-large {
+  display: inline-block; width: 40px; height: 40px;
+  border: 4px solid rgba(255, 127, 80, 0.2); border-radius: 50%;
+  border-top-color: #FF7F50; animation: maintenanceSpin 0.8s linear infinite; margin-bottom: 15px;
+}
+.loading-text { font-size: 1.1rem; color: #475569; margin:0; }
+
+.no-data-container {
+    text-align: center; padding: 50px 20px; background-color: #fff;
+    border-radius: 12px; margin-top: 20px; border: 1px dashed #cbd5e0;
+    box-shadow: 0 8px 25px rgba(0, 10, 30, 0.04);
+}
+.no-data-icon { width: 60px; height: 60px; stroke: #9ca3af; margin-bottom: 15px; }
+.no-data-text { font-size: 1.2rem; font-weight: 500; color: #374151; margin: 0 0 8px 0; }
+.no-data-subtext { font-size: 0.95rem; color: #6b7280; margin: 0; }
+
+
+/* --- Animations for Maintenance Page --- */
+.maintenance-animate-on-load {
+  opacity: 0;
+  transform: translateY(15px);
+}
+.maintenance-animate-on-load.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  /* data-delay will be applied inline by JS */
+}
+@keyframes maintenanceSpin { to { transform: rotate(360deg); } }
+
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 992px) {
+    .maintenance-table th, .maintenance-table td {
+        padding: 8px 10px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 768px) {
+  .maintenance-page-wrapper { padding: 0; }
+  .maintenance-container { padding: 20px 15px; margin-top:0; border-radius:0; }
+  .maintenance-header { flex-direction: column; gap: 15px; align-items: stretch; text-align: center; }
+  .maintenance-main-title { font-size: clamp(1.5rem, 4.5vw, 1.8rem); }
+  .save-all-btn { width: 100%; max-width: 250px; margin: 10px auto 0 auto; }
+  
+  .maintenance-table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .maintenance-table { min-width: 750px; /* Force scroll if content is wider */ }
+  .remarks-textarea { min-width: 150px; } /* Ensure textarea has some width */
+}
+
+@media (max-width: 480px) {
+  .maintenance-container { padding: 15px 10px; }
+  .maintenance-main-title { font-size: 1.4rem; }
+  .dashboard-message { padding: 10px; font-size: 0.9rem;}
+  .maintenance-table { min-width: 650px; }
+}
