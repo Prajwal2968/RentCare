@@ -21,8 +21,15 @@ function TenantDashboard() {
   const [loading, setLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [isConfigError, setIsConfigError] = useState(false);
+  const [configErrorMessage, setConfigErrorMessage] = useState("");
+
 
   useEffect(() => {
+    // For debugging: Log resolved env vars on component mount
+    console.log("TenantDashboard Mounted. ENV VARS:");
+    console.log("REACT_APP_API_BASE_URL:", API_BASE_URL);
+    console.log("REACT_APP_STRIPE_PUBLISHABLE_KEY:", STRIPE_PUBLISHABLE_KEY);
+
     const elementsToAnimate = document.querySelectorAll('.tenant-animate-on-load');
     elementsToAnimate.forEach((el, index) => {
       const delay = parseInt(el.dataset.delay || "0", 10);
@@ -32,42 +39,51 @@ function TenantDashboard() {
         }, delay + index * 50);
       }
     });
-  }, [loading, tenant]);
+  }, []); // Run only on mount for env var logging
 
 
   useEffect(() => {
     setLoading(true);
     setMessage('');
-    setIsConfigError(false); // Reset config error state
+    setConfigErrorMessage(""); // Clear specific config error message
+    setIsConfigError(false);
+
+    let currentConfigError = "";
 
     if (!API_BASE_URL) {
-      setMessage('Configuration Error: API URL is not set. Please contact support.');
+      currentConfigError = 'Configuration Error: API URL is not set. Please contact support.';
       console.error("CRITICAL: REACT_APP_API_BASE_URL is not set in environment variables.");
-      setLoading(false);
-      setIsConfigError(true);
-      return;
-    }
-    if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith('pk_')) {
-      setMessage('Configuration Error: Stripe is not configured correctly. Payment functionality will be disabled.');
+    } else if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith('pk_')) {
+      currentConfigError = 'Configuration Error: Stripe is not configured correctly. Payment functionality will be disabled.';
       console.error("CRITICAL: REACT_APP_STRIPE_PUBLISHABLE_KEY is not set or is invalid in environment variables.");
-      // Continue loading other data, but payment will be disabled by button logic
-      setIsConfigError(true); // Indicate a config issue, but don't necessarily stop all loading
     }
+
+
+    if (currentConfigError) {
+        setMessage(currentConfigError);
+        setConfigErrorMessage(currentConfigError);
+        setIsConfigError(true);
+        setLoading(false); // Stop loading if there's a critical config error early
+        if (!API_BASE_URL) return; // Hard stop if API URL is missing
+    }
+
 
     if (!propertyId || !flatNo) {
-      setMessage("Error: Property ID or Flat No missing from URL. Cannot load dashboard.");
+      const urlErrorMsg = "Error: Property ID or Flat No missing from URL. Cannot load dashboard.";
+      setMessage(urlErrorMsg);
+      setConfigErrorMessage(urlErrorMsg);
+      setIsConfigError(true);
       setLoading(false);
-      setIsConfigError(true); // Treat as a config/navigation error
       return;
     }
 
+    // If API_BASE_URL is missing, we would have returned already.
     fetch(`${API_BASE_URL}/properties/${propertyId}`)
       .then((res) => {
         if (!res.ok) {
-          // Try to parse error from backend if available
           return res.json().then(errData => {
             throw new Error(errData.message || `Failed to fetch property data (Status: ${res.status})`);
-          }).catch(() => { // Fallback if response isn't JSON
+          }).catch(() => {
             throw new Error(`Failed to fetch property data (Status: ${res.status})`);
           });
         }
@@ -88,6 +104,7 @@ function TenantDashboard() {
       .catch((error) => {
         console.error("Error loading tenant data:", error);
         setMessage(`Error loading dashboard: ${error.message}. Please try logging in again or contact support.`);
+        // Potentially set isConfigError here too if the error implies a fundamental issue
       })
       .finally(() => {
         setLoading(false);
@@ -96,25 +113,27 @@ function TenantDashboard() {
 
 
   const handlePayRent = async () => {
-    console.log('handlePayRent called');
-    console.log('API_BASE_URL:', API_BASE_URL);
-    console.log('STRIPE_PUBLISHABLE_KEY provided:', !!STRIPE_PUBLISHABLE_KEY);
-    console.log('Tenant data:', tenant);
-    console.log('Property data:', property);
+    // --- STEP 1: Check these logs first when you click "Pay Rent" ---
+    console.log('--- handlePayRent Initiated ---');
+    console.log('1. API_BASE_URL:', API_BASE_URL);
+    console.log('2. STRIPE_PUBLISHABLE_KEY:', STRIPE_PUBLISHABLE_KEY, '(Is it a valid pk_... key?)');
+    console.log('3. Tenant Data:', tenant);
+    console.log('4. Property Data:', property);
+    console.log('5. Tenant Rent Amount:', tenant ? tenant.rentAmount : 'Tenant data not available');
 
     if (!API_BASE_URL) {
         setMessage('API URL is not configured. Payment cannot proceed.');
-        console.error("REACT_APP_API_BASE_URL is not set");
+        console.error("handlePayRent ABORTED: REACT_APP_API_BASE_URL is not set");
         return;
     }
     if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith('pk_')) {
         setMessage('Stripe is not configured correctly. Payment cannot proceed.');
-        console.error("REACT_APP_STRIPE_PUBLISHABLE_KEY is not set or invalid.");
+        console.error("handlePayRent ABORTED: REACT_APP_STRIPE_PUBLISHABLE_KEY is not set or invalid.");
         return;
     }
     if (!tenant || !property || !tenant.rentAmount || tenant.rentAmount <= 0) {
       setMessage("Tenant data or rent amount is missing or invalid. Cannot proceed with payment.");
-      console.error("Missing tenant, property, or valid rentAmount:", {tenant, property});
+      console.error("handlePayRent ABORTED: Missing tenant, property, or valid rentAmount:", {tenant, property});
       setTimeout(() => setMessage(''), 4000);
       return;
     }
@@ -123,67 +142,72 @@ function TenantDashboard() {
     setMessage("Initializing payment...");
     try {
       const stripe = await stripePromise;
+      // --- STEP 2: Check if Stripe.js loaded ---
       if (!stripe) {
-        setMessage("Stripe.js could not be loaded. Please check your internet connection or contact support if the issue persists.");
+        setMessage("Stripe.js could not be loaded. Please check your internet connection or if your Stripe key is valid. Contact support if the issue persists.");
+        console.error("handlePayRent ABORTED: Stripe.js failed to load (stripe object is null). This usually means the publishable key was invalid or Stripe's script was blocked.");
         setIsActionLoading(false);
         setTimeout(() => setMessage(''), 5000);
         return;
       }
+      console.log('6. Stripe.js loaded successfully.');
 
-      console.log('Attempting to create Stripe session with body:', JSON.stringify({
-        tenant: { flatNo: tenant.flatNo, rentAmount: tenant.rentAmount, name: tenant.name, email: tenant.email || `${tenant.username || tenant.flatNo}@example.com` /* Fallback email if needed */ },
+      const requestBody = {
+        tenant: { flatNo: tenant.flatNo, rentAmount: tenant.rentAmount, name: tenant.name, email: tenant.email || `${tenant.username || tenant.flatNo}-tenant@example.com` },
         propertyId: property.id,
         propertyName: property.name,
-      }));
+      };
+      console.log('7. Attempting to create Stripe session with body:', JSON.stringify(requestBody));
 
       const response = await fetch(`${API_BASE_URL}/api/payment/create-checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tenant: { flatNo: tenant.flatNo, rentAmount: tenant.rentAmount, name: tenant.name, email: tenant.email || `${tenant.username || tenant.flatNo}@example.com` /* Provide a fallback if email is crucial */ },
-          propertyId: property.id,
-          propertyName: property.name,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      console.log('Create session response status:', response.status);
+      // --- STEP 3: Check response from your backend ---
+      console.log('8. Create session backend response status:', response.status);
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Failed to parse error from server."}) );
-        console.error('Server error during create-checkout-session:', errorData);
-        throw new Error(errorData.error || "Failed to create Stripe payment session. Please try again.");
+        const errorData = await response.json().catch(() => ({ error: "Failed to parse error from server. Server returned non-JSON."}) );
+        console.error('handlePayRent ERROR: Server error during create-checkout-session:', errorData, 'Status:', response.status);
+        throw new Error(errorData.error || `Failed to create Stripe payment session (Status: ${response.status}). Please try again.`);
       }
       const session = await response.json();
+      console.log('9. Session object received from backend:', session);
 
       if (!session || !session.id) {
-        console.error('Invalid session received from backend:', session);
+        console.error('handlePayRent ERROR: Invalid session object or session.id missing from backend response:', session);
         throw new Error("Received an invalid session from the server. Cannot proceed with payment.");
       }
 
-      console.log('Redirecting to Stripe Checkout with session ID:', session.id);
+      // --- STEP 4: Attempt to redirect to Stripe ---
+      console.log('10. Redirecting to Stripe Checkout with session ID:', session.id);
       const result = await stripe.redirectToCheckout({ sessionId: session.id });
 
+      // --- STEP 5: Check result from Stripe redirect ---
       if (result.error) {
-        console.error('Stripe redirectToCheckout error:', result.error);
+        console.error('handlePayRent ERROR: Stripe redirectToCheckout failed:', result.error);
         setMessage(`Payment Error: ${result.error.message}`);
         setTimeout(() => setMessage(''), 6000);
+      } else {
+        console.log('11. Stripe redirectToCheckout was called. If no error, user should be redirected. If still on this page, something else went wrong or user came back.');
       }
-      // If redirectToCheckout is successful, the user is navigated away.
-      // If it fails and returns here, an error occurred.
     } catch (error) {
-      console.error("Payment Process Error:", error);
-      setMessage(`Payment Error: ${error.message}`);
+      console.error("handlePayRent CRITICAL CATCH BLOCK Error:", error);
+      setMessage(`Payment Process Error: ${error.message}`);
       setTimeout(() => setMessage(''), 6000);
     } finally {
       setIsActionLoading(false);
-      // Only clear "Initializing payment..." if no other error message was set and not redirecting
-      if (message === "Initializing payment...") {
+      if (message === "Initializing payment...") { // Clear "Initializing" only if no other message took precedence
         setMessage("");
       }
+      console.log('--- handlePayRent Finished ---');
     }
   };
 
 
   const handleRaiseRequest = async () => {
+    // ... (keep this function as is from the previous "corrected" version)
     if (!tenant || !property) return;
     if (!API_BASE_URL) {
         setMessage('API URL is not configured. Cannot submit request.');
@@ -198,44 +222,35 @@ function TenantDashboard() {
       return;
     }
     setIsActionLoading(true);
-    // Ensure new request has a unique ID if your backend doesn't assign one immediately upon array push
-    // Or rely on backend to assign upon PUT. For optimistic UI, a temp ID is fine.
     const newRequest = {
-      id: `temp-mr-${Date.now()}`, // Temporary ID for UI, backend should replace/confirm
+      id: `temp-mr-${Date.now()}`, 
       flatNo: tenant.flatNo, description: description.trim(),
       status: "Pending", date: new Date().toISOString().split("T")[0], remarks: "",
     };
-
-    // Optimistically update UI first
+    const originalProperty = JSON.parse(JSON.stringify(property)); // Deep copy for revert
     const optimisticProperty = {
         ...property,
         maintenanceRequests: [...(property.maintenanceRequests || []), newRequest]
     };
-    setProperty(optimisticProperty); // Update property state to reflect new request immediately
+    setProperty(optimisticProperty);
 
     try {
-      // Send only the new request or the minimal data needed for backend to add it.
-      // Sending the whole property object can be heavy and prone to race conditions if other parts changed.
-      // Ideal: POST to a dedicated /properties/:propertyId/maintenance-requests endpoint
-      // Current approach: PUT the whole property object
       const res = await fetch(`${API_BASE_URL}/properties/${property.id}`, {
         method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(optimisticProperty) // Send the optimistic state
+        body: JSON.stringify(optimisticProperty)
       });
       if (!res.ok) {
-        // Revert optimistic update on error
-        setProperty(property); // Revert to original property state
+        setProperty(originalProperty); 
         const errorData = await res.json().catch(() => ({message: "Failed to submit request."}));
         throw new Error(errorData.message || "Failed to submit maintenance request.");
       }
       const savedProperty = await res.json();
-      setProperty(savedProperty); // Update with confirmed state from backend (which should include the new request with its final ID)
-
+      setProperty(savedProperty);
       setMessage("Maintenance request submitted successfully.");
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error("Raise request error:", error);
-      setProperty(property); // Revert optimistic update on error
+      setProperty(originalProperty); 
       setMessage(`Error submitting request: ${error.message}`);
       setTimeout(() => setMessage(''), 5000);
     } finally {
@@ -244,6 +259,7 @@ function TenantDashboard() {
   };
 
   const handleDeleteRequest = async (requestIdToDelete) => {
+    // ... (keep this function as is from the previous "corrected" version)
     if (!property || !requestIdToDelete || !window.confirm("Are you sure you want to delete this maintenance request?")) return;
     if (!API_BASE_URL) {
         setMessage('API URL is not configured. Cannot delete request.');
@@ -252,29 +268,25 @@ function TenantDashboard() {
     }
     setIsActionLoading(true);
     
-    const originalProperty = { ...property }; // Keep a copy to revert on error
+    const originalProperty = JSON.parse(JSON.stringify(property)); // Deep copy
     const updatedMaintenanceRequests = (property.maintenanceRequests || []).filter(r => r.id !== requestIdToDelete);
     const optimisticProperty = { ...property, maintenanceRequests: updatedMaintenanceRequests };
-    setProperty(optimisticProperty); // Optimistic UI update
+    setProperty(optimisticProperty);
 
     try {
       const res = await fetch(`${API_BASE_URL}/properties/${property.id}`, {
         method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(optimisticProperty)
       });
       if (!res.ok) { 
-        setProperty(originalProperty); // Revert
+        setProperty(originalProperty);
         const errorData = await res.json().catch(() => ({message: "Failed to delete request."}));
         throw new Error(errorData.message || "Failed to delete maintenance request.");
       }
-      // Backend confirmed delete, property state is already optimistically updated.
-      // Optionally, fetch the latest property state if backend might have made other changes:
-      // const savedProperty = await res.json();
-      // setProperty(savedProperty);
       setMessage("Maintenance request deleted successfully.");
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error("Delete request error:", error);
-      setProperty(originalProperty); // Revert
+      setProperty(originalProperty);
       setMessage(`Error deleting request: ${error.message}`);
       setTimeout(() => setMessage(''), 5000);
     } finally {
@@ -282,23 +294,9 @@ function TenantDashboard() {
     }
   };
 
+  // --- RENDER LOGIC ---
 
-  if (isConfigError && loading) { // If config error happened during initial load phase
-    // Allow loading to finish to display the config error message properly
-  } else if (isConfigError) { // If config error persists after loading or set separately
-     return (
-        <div className="tenant-dashboard-page-wrapper">
-            <div className="error-container tenant-dashboard tenant-animate-on-load is-visible">
-                <h2 className="dashboard-title">Configuration Error</h2>
-                <p className="dashboard-message error">{message}</p>
-                 <button onClick={() => navigate('/login')} className="dashboard-button primary">Go to Login</button>
-            </div>
-        </div>
-    );
-  }
-
-
-  if (loading) return (
+  if (loading) return ( // Keep a general loading screen first
     <div className="tenant-dashboard-page-wrapper">
       <div className="loading-container tenant-animate-on-load is-visible">
         <span className="loading-spinner-large"></span>
@@ -307,16 +305,19 @@ function TenantDashboard() {
     </div>
   );
 
-  if (!tenant || !property) return (
-    <div className="tenant-dashboard-page-wrapper">
-      <div className="error-container tenant-dashboard tenant-animate-on-load is-visible">
-        <h2 className="dashboard-title">Access Error</h2>
-        <p className="dashboard-message error">{message || "Could not load your information. Please ensure you are logged in correctly or contact support."}</p>
-        <button onClick={() => navigate('/login')} className="dashboard-button primary">Go to Login</button>
-      </div>
-    </div>
-  );
+  if (isConfigError || !tenant || !property) { // If config error OR data loading failed
+     return (
+        <div className="tenant-dashboard-page-wrapper">
+            <div className="error-container tenant-dashboard tenant-animate-on-load is-visible">
+                <h2 className="dashboard-title">{isConfigError ? "Configuration Issue" : "Access Error"}</h2>
+                <p className="dashboard-message error">{message || configErrorMessage || "Could not load your information. Please ensure you are logged in correctly or contact support."}</p>
+                 <button onClick={() => navigate('/login')} className="dashboard-button primary">Go to Login</button>
+            </div>
+        </div>
+    );
+  }
 
+  // If loading is false, and no config error, and tenant & property are loaded:
   const tenantMaintenanceRequests = (property.maintenanceRequests || []).filter(req => req.flatNo === tenant.flatNo).sort((a,b) => new Date(b.date) - new Date(a.date));
   const tenantPaymentHistory = (tenant.paymentHistory || []).sort((a,b) => new Date(b.date) - new Date(a.date));
   const ownerNotifications = (tenant.notifiedMessages || []).sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -335,7 +336,8 @@ function TenantDashboard() {
           </div>
           <h2 className="dashboard-title">My Dashboard</h2>
         </header>
-        {message && (
+        {/* Display general messages, but not if it's a config error (handled by the full-screen error) */}
+        {message && !isConfigError && (
             <p className={`dashboard-message ${message.toLowerCase().includes('error') || message.toLowerCase().includes('failed') ? 'error' : 'success'} tenant-animate-on-load`} data-delay="100">{message}</p>
         )}
 
@@ -351,28 +353,28 @@ function TenantDashboard() {
         </section>
 
         <section className="tenant-actions-section tenant-animate-on-load" data-delay="200">
-          {canPayRent && (
+          {canPayRent ? (
             <button className="dashboard-button pay-rent-btn" onClick={handlePayRent} disabled={isActionLoading}>
               {isActionLoading ? <span className="spinner"></span> : `Pay Rent (₹${tenant.rentAmount})`}
             </button>
-          )}
-          {!canPayRent && tenant.paymentStatus === "Pending" && tenant.rentAmount > 0 && (
-             <button className="dashboard-button pay-rent-btn" disabled={true} title="Payment system is currently unavailable. Please check configuration.">
+          ) : (
+            tenant.paymentStatus === "Pending" && tenant.rentAmount > 0 && (
+             <button className="dashboard-button pay-rent-btn" disabled={true} title="Payment system is currently unavailable. Please check configuration or contact support.">
               Pay Rent (Unavailable)
             </button>
+            )
           )}
           <button className="dashboard-button raise-request-btn" onClick={handleRaiseRequest} disabled={isActionLoading || !API_BASE_URL}>
             {isActionLoading ? <span className="spinner"></span> : 'Raise Maintenance Request'}
           </button>
         </section>
 
-
         <div className="dashboard-columns-wrapper tenant-animate-on-load" data-delay="250">
           <section className="dashboard-column maintenance-column">
             <h4 className="column-title">My Maintenance Requests</h4>
             {tenantMaintenanceRequests.length > 0 ? (
               tenantMaintenanceRequests.map((req) => (
-                <div key={req.id || `mr-${req.date}-${req.flatNo}`} className="info-card maintenance-card">
+                <div key={req.id || `mr-${req.date}-${req.flatNo}-${req.description.slice(0,5)}`} className="info-card maintenance-card">
                   <p className="card-text"><strong>Issue:</strong> {req.description}</p>
                   <p className="card-text"><strong>Status:</strong> <span className={`status-pill status-${req.status?.toLowerCase().replace(' ', '-')}`}>{req.status}</span></p>
                   <p className="card-date"><em>Submitted:</em> {new Date(req.date).toLocaleDateString()}</p>
@@ -392,16 +394,12 @@ function TenantDashboard() {
             {tenantPaymentHistory.length > 0 ? (
               <ul className="info-list">
                 {tenantPaymentHistory.map((entry) => (
-                  <li key={entry.id || `ph-${entry.date}-${entry.amount}`} className="info-card payment-card">
+                  <li key={entry.id || `ph-${entry.date}-${entry.amount}-${entry.status}`} className="info-card payment-card">
                     <div className="payment-details">
                       <span className="payment-amount">Amount: ₹{entry.amount}</span>
                       <span className="payment-date">Date: {new Date(entry.date).toLocaleDateString()}</span>
                       <span className={`payment-status status-pill status-${entry.status?.toLowerCase()}`}>{entry.status}</span>
                     </div>
-                    {/* Deleting payment history might be sensitive, commenting out
-                    <button className="dashboard-button delete-btn-small" onClick={() => handleDeleteTransaction(entry.id)} disabled={isActionLoading || !API_BASE_URL}>
-                        {isActionLoading ? <span className="spinner-small"></span> : 'Delete'}
-                    </button> */}
                   </li>
                 ))}
               </ul>
@@ -416,7 +414,7 @@ function TenantDashboard() {
           {ownerNotifications.length > 0 ? (
             <ul className="info-list">
               {ownerNotifications.map((msg) => (
-                <li key={msg.id || `notif-${msg.date}`} className="info-card notification-card">
+                <li key={msg.id || `notif-${msg.date}-${msg.message.slice(0,5)}`} className="info-card notification-card">
                   <p className="card-text">{msg.message}</p>
                   <span className="card-date">Received: {new Date(msg.date).toLocaleDateString()}</span>
                 </li>
