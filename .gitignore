@@ -1,0 +1,27 @@
+# Log files
+logs
+*log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*   # Corrected
+lerna-debug.log*
+
+# Dependencies
+# Specific paths are good for clarity if structure is fixed
+backend/node_modules/
+rentcare/node_modules/
+# General catch-all for any other node_modules that might appear
+**/node_modules 
+# (Note: The more specific ones above might make the general one redundant, 
+# but having both doesn't hurt and covers all bases)
+
+# Environment Variables
+# Specific paths
+backend/.env
+rentcare/.env.local
+# General catch-all for other .env files
+.env
+.env.*
+!.env.example  # IMPORTANT: Un-ignore your example/template .env file
+# !.env.production # Only if you intend to commit production env variables (usually not for frontend)
