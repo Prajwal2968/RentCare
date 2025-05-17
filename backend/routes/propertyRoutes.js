@@ -4,6 +4,7 @@ const router = express.Router();
 const Property = require("../models/Property");
 const mongoose = require('mongoose');
 
+// Middleware to validate MongoDB ObjectId
 const validateObjectId = (paramName = 'id') => (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params[paramName])) {
         return res.status(400).json({ message: `Invalid ${paramName} format` });
@@ -14,7 +15,7 @@ const validateObjectId = (paramName = 'id') => (req, res, next) => {
 // GET all properties
 router.get("/", async (req, res) => {
   try {
-    const properties = await Property.find(req.query); // .populate('ownerId', 'email'); // If you need owner details
+    const properties = await Property.find(req.query);
     res.json(properties);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -24,10 +25,13 @@ router.get("/", async (req, res) => {
 // POST a new property
 router.post("/", async (req, res) => {
   const { name, location, ownerId, tenants = [], maintenanceRequests = [] } = req.body;
+
   if (!name || !location) {
-      return res.status(400).json({ message: "Property name and location are required." });
+    return res.status(400).json({ message: "Property name and location are required." });
   }
+
   const newProperty = new Property({ name, location, ownerId, tenants, maintenanceRequests });
+
   try {
     const savedProperty = await newProperty.save();
     res.status(201).json(savedProperty);
@@ -48,25 +52,18 @@ router.get("/:id", validateObjectId('id'), async (req, res) => {
 });
 
 // PUT (update) a property by ID
-// This route will handle updates sent from frontend components like OwnerDashboard, OwnerViewTenants, PaymentSuccess (indirectly), TenantDashboard.
-// It replaces the document's specified fields or the whole document if all fields are sent.
-// For sub-arrays like tenants, Mongoose handles updates based on _id matching. New items get new _ids.
 router.put("/:id", validateObjectId('id'), async (req, res) => {
   try {
-    const updateData = req.body; // Frontend sends the whole modified property or parts of it
-    // Ensure subdocuments get _id if they are new and client didn't send one.
-    // Mongoose generally handles this well if `_id: true` is in subdocument schemas.
-    // For example, if a new tenant is in updateData.tenants without an _id, Mongoose adds it.
-    // If an existing tenant (with _id) is modified, Mongoose updates it.
-    
+    const updateData = req.body;
+
     const updatedProperty = await Property.findByIdAndUpdate(
-  req.params.id,
-  updateData,
-  { new: true, runValidators: true }
-);
-res.json(updatedProperty);
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
 
     if (!updatedProperty) return res.status(404).json({ message: "Property not found" });
+
     res.json(updatedProperty);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -78,44 +75,41 @@ router.delete("/:id", validateObjectId('id'), async (req, res) => {
   try {
     const deletedProperty = await Property.findByIdAndDelete(req.params.id);
     if (!deletedProperty) return res.status(404).json({ message: "Property not found" });
+
     res.json({ message: "Property deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-
-// Specific route for PaymentSuccess component to update tenant after payment
+// Update tenant payment status after payment (used by PaymentSuccess component)
 router.put("/:propertyId/tenants/:tenantFlatNo/payment-success", validateObjectId('propertyId'), async (req, res) => {
-    const { propertyId, tenantFlatNo } = req.params;
-    // The rentAmount paid could be retrieved from Stripe webhook for more security, or from session metadata.
-    // For simplicity, we'll trust the rentAmount from the tenant object if needed or use a fixed value.
-    // The PaymentSuccess component will fetch the tenant's rentAmount before calling this.
-    const { rentAmount } = req.body; // This is the original rentAmount due
+  const { propertyId, tenantFlatNo } = req.params;
+  const { rentAmount } = req.body;
 
-    try {
-        const property = await Property.findById(propertyId);
-        if (!property) return res.status(404).json({ error: "Property not found" });
+  try {
+    const property = await Property.findById(propertyId);
+    if (!property) return res.status(404).json({ error: "Property not found" });
 
-        const tenant = property.tenants.find(t => t.flatNo === tenantFlatNo);
-        if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+    const tenant = property.tenants.find(t => t.flatNo === tenantFlatNo);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
-        const paymentDate = new Date().toISOString().split("T")[0];
-        tenant.paymentStatus = "Paid";
-        tenant.lastNotify = paymentDate;
-        tenant.paymentHistory.push({
-            // _id will be auto-generated by Mongoose for this new subdocument
-            amount: Number(rentAmount), // Ensure it's a number
-            date: paymentDate,
-            status: "Paid"
-        });
+    const paymentDate = new Date().toISOString().split("T")[0];
+    tenant.paymentStatus = "Paid";
+    tenant.lastNotify = paymentDate;
+    tenant.paymentHistory.push({
+      amount: Number(rentAmount),
+      date: paymentDate,
+      status: "Paid"
+    });
 
-        await property.save();
-        res.json({ message: "Payment status updated successfully", tenant: tenant.toJSON() });
-    } catch (error) {
-        console.error("Error updating payment status in DB:", error);
-        res.status(500).json({ error: "Failed to update payment status: " + error.message });
-    }
+    await property.save();
+
+    res.json({ message: "Payment status updated successfully", tenant: tenant.toJSON() });
+  } catch (error) {
+    console.error("Error updating payment status in DB:", error);
+    res.status(500).json({ error: "Failed to update payment status: " + error.message });
+  }
 });
 
 module.exports = router;
