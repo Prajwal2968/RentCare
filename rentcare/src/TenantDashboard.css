@@ -33,8 +33,8 @@
   min-height: 100vh;
   width: 100%;
   background-color: var(--bg-light);
-  padding-top: 30px; /* Space from top */
-  padding-bottom: 50px; /* Space at bottom */
+  padding-top: 30px;
+  padding-bottom: 50px;
   box-sizing: border-box;
   font-family: var(--font-body);
   color: var(--text-primary);
@@ -42,9 +42,9 @@
 
 .tenant-dashboard-container {
   width: 100%;
-  max-width: 900px; /* Slightly more compact */
-  background-color: transparent; /* Container is now just for layout */
-  padding: 0 15px; /* Horizontal padding for content within max-width */
+  max-width: 900px;
+  background-color: transparent;
+  padding: 0 15px;
   margin: 0 auto;
 }
 
@@ -72,7 +72,6 @@
 .page-feedback-container.error-message p { color: var(--text-secondary); margin-bottom: 25px; }
 .page-feedback-container .dashboard-button { margin-top: 20px; }
 
-
 .dashboard-message {
   text-align: center; margin: 0 auto 25px auto; max-width: 700px;
   font-size: 0.95rem; font-weight: 500; padding: 12px 18px; border-radius: var(--border-radius-md);
@@ -83,7 +82,6 @@
 .dashboard-message.error { color: var(--error-text); background-color: var(--error-bg); border-color: var(--error-text); }
 .dashboard-message.warning { color: var(--warning-text); background-color: var(--warning-bg); border-color: var(--warning-text); }
 
-
 /* Card Style for Sections */
 .card-style {
   margin-bottom: 30px;
@@ -93,7 +91,7 @@
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border-color);
 }
-.tenant-actions-section { /* Actions don't need card style */
+.tenant-actions-section {
   background-color: transparent; box-shadow: none; border: none; padding: 0; margin-bottom: 30px;
   display: flex; gap: 15px; flex-wrap: wrap;
 }
@@ -119,14 +117,17 @@
 .details-grid strong { color: var(--text-primary); font-weight: 500; }
 
 .status-pill {
-  padding: 5px 12px; border-radius: 999px; /* Full pill */
+  padding: 5px 12px; border-radius: 999px;
   font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
 }
 .status-paid, .status-resolved { background-color: var(--success-bg); color: var(--success-text); }
 .status-pending { background-color: var(--error-bg); color: var(--error-text); }
-.status-in-progress { background-color: #FEF3C7; color: #92400E; } /* Amber/Yellow */
-.status-unknown { background-color: #E5E7EB; color: #4B5563; } /* Gray */
+.status-in-progress { background-color: #FEF3C7; color: #92400E; }
+.status-unknown { background-color: #E5E7EB; color: #4B5563; }
 
+.last-paid-info {
+  font-size: 0.8rem; color: var(--success-text); margin-top: 10px; font-style: italic;
+}
 
 /* Buttons */
 .dashboard-button {
@@ -137,13 +138,13 @@
   box-shadow: var(--shadow-sm);
 }
 .dashboard-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.dashboard-button:disabled { /* Styles already defined, ensure they use vars */
+.dashboard-button:disabled {
   background-color: #D1D5DB !important; color: #6B7280 !important;
   cursor: not-allowed; box-shadow: none !important; transform: none !important;
 }
 .dashboard-button.primary { background-color: var(--primary-color); color: white; }
 .dashboard-button.primary:hover:not(:disabled) { background-color: var(--primary-darker); }
-.dashboard-button.secondary { background-color: #6B7280; color: white; } /* Gray */
+.dashboard-button.secondary { background-color: #6B7280; color: white; }
 .dashboard-button.secondary:hover:not(:disabled) { background-color: #4B5563; }
 
 .pay-rent-btn {
@@ -155,6 +156,8 @@
   background-color: var(--secondary-color); color: white;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
+.raise-request-btn:hover:not(:disabled) { background-color: var(--secondary-darker); }
+
 
 /* Lists and Cards in Columns */
 .dashboard-columns-wrapper {
@@ -163,18 +166,23 @@
     gap: 30px;
     margin-bottom: 30px;
 }
-.info-card { /* Individual item card */
+.info-card {
   background-color: var(--bg-card);
   padding: 18px 20px;
   border-radius: var(--border-radius-md);
   margin-bottom: 15px;
   box-shadow: var(--shadow-sm);
-  border: 1px solid #e9eff6; /* Softer border */
+  border: 1px solid #e9eff6;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  display: flex; /* For aligning delete button in maintenance card */
+  flex-direction: column; /* Stack content vertically */
 }
 .info-card:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-md);
+}
+.info-card .card-content { /* New wrapper for main content */
+    flex-grow: 1;
 }
 .info-card .card-text { margin: 0 0 8px 0; font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5; }
 .info-card .card-date { font-size: 0.8rem; color: #9CA3AF; text-align: right; margin-top: 10px; }
@@ -185,30 +193,37 @@
 }
 .info-list { list-style: none; padding: 0; margin: 0; }
 
-.payment-card { display: flex; justify-content: space-between; align-items: center; }
+.payment-card { /* Specific styling for payment card layout if needed */
+    /* display: flex; (already handled by info-card if we put button inside a div)
+    justify-content: space-between;
+    align-items: center; */
+}
+.payment-details { flex-grow: 1; } /* Allows details to take space */
 .payment-details span { display: block; font-size: 0.95rem; margin-bottom: 5px; }
 .payment-details .payment-amount { font-weight: 600; color: var(--text-primary); }
 
 /* Scrollable List Container */
 .scrollable-list {
-  max-height: 400px; /* Adjust as needed */
+  max-height: 350px; /* Adjust as needed */
   overflow-y: auto;
-  padding-right: 10px; /* Space for scrollbar */
+  padding-right: 10px;
+  padding-bottom: 5px;
 }
-/* Custom Scrollbar (optional, for webkit browsers) */
-.scrollable-list::-webkit-scrollbar { width: 6px; }
+.scrollable-list::-webkit-scrollbar { width: 8px; }
 .scrollable-list::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
 .scrollable-list::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
 .scrollable-list::-webkit-scrollbar-thumb:hover { background: #aaa; }
-
 
 .delete-btn-small {
   background-color: var(--error-bg); color: var(--error-text);
   padding: 6px 12px !important; font-size: 0.75rem !important;
   border: 1px solid var(--border-color);
+  margin-top: 10px; /* Give some space from content above */
+  align-self: flex-end; /* Pushes button to the right if card is flex column */
 }
 .delete-btn-small:hover:not(:disabled) { background-color: #FCA5A5; color: #7f1d1d; }
-.maintenance-card .delete-btn-small { margin-top: 12px; float: right;}
+/* .maintenance-card .delete-btn-small { margin-top: 12px; } This is now handled by align-self */
+
 
 .no-items-text {
   font-size: 1rem; color: var(--text-secondary); text-align: center;
@@ -218,14 +233,20 @@
 
 /* Spinners */
 .spinner, .spinner-small {
-  border: 3px solid rgba(0,0,0,0.1); /* Default for secondary buttons */
-  border-top-color: currentColor; /* Takes color of parent text */
+  border: 3px solid rgba(0,0,0,0.1);
+  border-top-color: currentColor;
+  border-radius: 50%;
   animation: tenantDashboardSpin 0.8s linear infinite;
+  display: inline-block; /* ensure it's displayed */
+  width: 16px; /* default spinner size */
+  height: 16px;
 }
-.dashboard-button.primary .spinner {
+.dashboard-button.primary .spinner { /* Spinner inside primary button */
     border-color: rgba(255,255,255,0.3);
     border-top-color: #fff;
 }
+.spinner-small { width: 12px; height: 12px; border-width: 2px; }
+
 .loading-spinner-large { /* For page load */
   width: 48px; height: 48px; border-width: 5px;
   border-color: rgba(255, 127, 80, 0.2);
@@ -240,15 +261,19 @@
   background-color: rgba(0, 0, 0, 0.6);
   display: flex; align-items: center; justify-content: center;
   z-index: 1000; padding: 20px;
+  opacity: 0; animation: modalOverlayFadeIn 0.3s forwards;
 }
+@keyframes modalOverlayFadeIn { to { opacity: 1; } }
+
 .modal-content {
   background-color: white; padding: 25px 30px;
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);
   width: 100%; max-width: 500px;
-  animation: modalFadeIn 0.3s ease-out;
+  opacity: 0; transform: translateY(-20px);
+  animation: modalContentFadeIn 0.3s 0.1s forwards; /* Delay content animation slightly */
 }
-@keyframes modalFadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes modalContentFadeIn { to { opacity: 1; transform: translateY(0); } }
 
 .modal-header {
   display: flex; justify-content: space-between; align-items: center;
@@ -275,7 +300,6 @@
 
 .modal-footer { display: flex; justify-content: flex-end; gap: 12px; }
 
-
 /* Animations */
 .tenant-animate-on-load { opacity: 0; transform: translateY(20px); }
 .tenant-animate-on-load.is-visible {
@@ -283,7 +307,6 @@
   transition: opacity 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 @keyframes tenantDashboardSpin { to { transform: rotate(360deg); } }
-
 
 /* Responsive */
 @media (max-width: 992px) {
@@ -298,15 +321,15 @@
   .card-style, .tenant-actions-section { padding: 20px; }
   .section-title, .column-title { font-size: 1.3rem; }
   .details-grid { grid-template-columns: 1fr; }
-  .tenant-actions-section { justify-content: stretch; } /* Make buttons take full width on mobile */
+  .tenant-actions-section { justify-content: stretch; }
   .pay-rent-btn, .raise-request-btn { width: 100%; margin-bottom: 10px; }
-  .scrollable-list { padding-right: 5px; } /* Less padding for scrollbar on mobile */
+  .scrollable-list { padding-right: 5px; max-height: 300px; /* Adjust max-height for mobile */ }
 }
 @media (max-width: 480px) {
     .card-style, .tenant-actions-section { padding: 15px; }
     .dashboard-title, .tenant-dashboard-header .brand-name-text { font-size: 1.3rem; }
     .section-title, .column-title { font-size: 1.15rem; }
     .details-grid p, .info-card .card-text, .payment-details span { font-size: 0.9rem; }
-    .modal-content { padding: 20px; }
+    .modal-content { padding: 20px; margin: 0 10px; /* Ensure modal doesn't touch screen edges */ }
     .modal-header h3 { font-size: 1.2rem; }
 }
