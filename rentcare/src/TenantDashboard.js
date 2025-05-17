@@ -8,7 +8,9 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 // Ensure this is your Stripe Publishable Key
 const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || ""; // Default to empty string
-const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : Promise.resolve(null);
+const stripePromise = STRIPE_PUBLISHABLE_KEY && STRIPE_PUBLISHABLE_KEY.startsWith('pk_')
+    ? loadStripe(STRIPE_PUBLISHABLE_KEY)
+    : Promise.resolve(null);
 
 
 function TenantDashboard() {
@@ -17,18 +19,16 @@ function TenantDashboard() {
 
   const [tenant, setTenant] = useState(null);
   const [property, setProperty] = useState(null);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(""); // General operational messages
   const [loading, setLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [isConfigError, setIsConfigError] = useState(false);
-  const [configErrorMessage, setConfigErrorMessage] = useState("");
-
+  const [configErrorMessage, setConfigErrorMessage] = useState(""); // Specific for config issues
 
   useEffect(() => {
-    // For debugging: Log resolved env vars on component mount
-    console.log("TenantDashboard Mounted. ENV VARS:");
-    console.log("REACT_APP_API_BASE_URL:", API_BASE_URL);
-    console.log("REACT_APP_STRIPE_PUBLISHABLE_KEY:", STRIPE_PUBLISHABLE_KEY);
+    console.log("TenantDashboard Mounted. PARAMS:", { propertyId, flatNo });
+    console.log("ENV VARS - API_BASE_URL:", API_BASE_URL);
+    console.log("ENV VARS - STRIPE_PUBLISHABLE_KEY:", STRIPE_PUBLISHABLE_KEY);
 
     const elementsToAnimate = document.querySelectorAll('.tenant-animate-on-load');
     elementsToAnimate.forEach((el, index) => {
@@ -39,101 +39,102 @@ function TenantDashboard() {
         }, delay + index * 50);
       }
     });
-  }, []); // Run only on mount for env var logging
+  }, []);
 
 
   useEffect(() => {
     setLoading(true);
-    setMessage('');
+    setMessage(''); // Clear general messages
     setConfigErrorMessage(""); // Clear specific config error message
     setIsConfigError(false);
 
-    let currentConfigError = "";
+    let currentConfigIssue = "";
 
     if (!API_BASE_URL) {
-      currentConfigError = 'Configuration Error: API URL is not set. Please contact support.';
+      currentConfigIssue = 'Configuration Error: API URL is not set. Please contact support.';
       console.error("CRITICAL: REACT_APP_API_BASE_URL is not set in environment variables.");
     } else if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith('pk_')) {
-      currentConfigError = 'Configuration Error: Stripe is not configured correctly. Payment functionality will be disabled.';
-      console.error("CRITICAL: REACT_APP_STRIPE_PUBLISHABLE_KEY is not set or is invalid in environment variables.");
+      currentConfigIssue = 'Configuration Error: Stripe is not configured correctly. Payment functionality will be disabled.';
+      console.error("CRITICAL: REACT_APP_STRIPE_PUBLISHABLE_KEY is not set or is invalid.");
     }
 
-
-    if (currentConfigError) {
-        setMessage(currentConfigError);
-        setConfigErrorMessage(currentConfigError);
+    if (currentConfigIssue) {
+        setConfigErrorMessage(currentConfigIssue); // Set specific config error message
         setIsConfigError(true);
-        setLoading(false); // Stop loading if there's a critical config error early
-        if (!API_BASE_URL) return; // Hard stop if API URL is missing
+        setLoading(false);
+        if (!API_BASE_URL) return; // Hard stop if API URL is the issue, Stripe issue can allow page to load mostly
     }
-
 
     if (!propertyId || !flatNo) {
-      const urlErrorMsg = "Error: Property ID or Flat No missing from URL. Cannot load dashboard.";
-      setMessage(urlErrorMsg);
-      setConfigErrorMessage(urlErrorMsg);
+      const urlErrorMsg = "Error: Invalid navigation parameters. Property ID or Flat No missing from URL.";
+      setConfigErrorMessage(urlErrorMsg); // Treat as a config/navigation error
       setIsConfigError(true);
       setLoading(false);
       return;
     }
 
-    // If API_BASE_URL is missing, we would have returned already.
-    fetch(`${API_BASE_URL}/properties/${propertyId}`)
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then(errData => {
-            throw new Error(errData.message || `Failed to fetch property data (Status: ${res.status})`);
-          }).catch(() => {
-            throw new Error(`Failed to fetch property data (Status: ${res.status})`);
-          });
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (!data) {
-            throw new Error("Property data received is invalid or empty.");
-        }
-        setProperty(data);
-        const matchedTenant = data.tenants?.find(t => t.flatNo === flatNo);
+    // Only proceed if API_BASE_URL is set
+    if (API_BASE_URL) {
+        fetch(`${API_BASE_URL}/properties/${propertyId}`)
+        .then((res) => {
+            if (!res.ok) {
+            return res.json().then(errData => {
+                throw new Error(errData.message || `Failed to fetch property data (Status: ${res.status})`);
+            }).catch(() => {
+                throw new Error(`Failed to fetch property data (Status: ${res.status}, not JSON response)`);
+            });
+            }
+            return res.json();
+        })
+        .then((data) => {
+            if (!data || typeof data !== 'object') { // More robust check for data
+                throw new Error("Property data received is invalid or empty.");
+            }
+            setProperty(data);
+            const matchedTenant = data.tenants?.find(t => t.flatNo === flatNo);
 
-        if (!matchedTenant) {
-          throw new Error(`Tenant for Flat No: ${flatNo} not found in property: ${data.name || propertyId}.`);
-        }
-        setTenant(matchedTenant);
-      })
-      .catch((error) => {
-        console.error("Error loading tenant data:", error);
-        setMessage(`Error loading dashboard: ${error.message}. Please try logging in again or contact support.`);
-        // Potentially set isConfigError here too if the error implies a fundamental issue
-      })
-      .finally(() => {
+            if (!matchedTenant) {
+            throw new Error(`Tenant for Flat No: "${flatNo}" not found in property: "${data.name || propertyId}". Check login details or property data.`);
+            }
+            setTenant(matchedTenant);
+        })
+        .catch((error) => {
+            console.error("Error loading tenant/property data:", error);
+            // Set general message for data loading errors, config error is handled above
+            setMessage(`Error loading dashboard: ${error.message}.`);
+        })
+        .finally(() => {
+            setLoading(false);
+        });
+    } else {
+        // This case should ideally be caught by the API_BASE_URL check above,
+        // but as a fallback:
         setLoading(false);
-      });
-  }, [propertyId, flatNo]);
+        if (!isConfigError) { // If not already set by the API_BASE_URL check
+            setConfigErrorMessage('Configuration Error: API URL missing, cannot fetch data.');
+            setIsConfigError(true);
+        }
+    }
+  }, [propertyId, flatNo]); // API_BASE_URL and STRIPE_PUBLISHABLE_KEY are module-level, not reactive props here
 
 
   const handlePayRent = async () => {
-    // --- STEP 1: Check these logs first when you click "Pay Rent" ---
     console.log('--- handlePayRent Initiated ---');
     console.log('1. API_BASE_URL:', API_BASE_URL);
-    console.log('2. STRIPE_PUBLISHABLE_KEY:', STRIPE_PUBLISHABLE_KEY, '(Is it a valid pk_... key?)');
-    console.log('3. Tenant Data:', tenant);
-    console.log('4. Property Data:', property);
-    console.log('5. Tenant Rent Amount:', tenant ? tenant.rentAmount : 'Tenant data not available');
+    console.log('2. STRIPE_PUBLISHABLE_KEY:', STRIPE_PUBLISHABLE_KEY);
+    console.log('3. Tenant Data:', JSON.stringify(tenant)); // Stringify for better object view
+    console.log('4. Property Data:', JSON.stringify(property)); // Stringify
+    console.log('5. Tenant Rent Amount:', tenant ? tenant.rentAmount : 'N/A');
 
-    if (!API_BASE_URL) {
-        setMessage('API URL is not configured. Payment cannot proceed.');
-        console.error("handlePayRent ABORTED: REACT_APP_API_BASE_URL is not set");
-        return;
-    }
-    if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith('pk_')) {
-        setMessage('Stripe is not configured correctly. Payment cannot proceed.');
-        console.error("handlePayRent ABORTED: REACT_APP_STRIPE_PUBLISHABLE_KEY is not set or invalid.");
+    // Re-check critical configs before proceeding
+    if (!API_BASE_URL || !STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith('pk_')) {
+        setMessage('Configuration error prevents payment. Please contact support.');
+        console.error("Payment ABORTED: Critical configuration missing (API URL or Stripe Key).");
         return;
     }
     if (!tenant || !property || !tenant.rentAmount || tenant.rentAmount <= 0) {
       setMessage("Tenant data or rent amount is missing or invalid. Cannot proceed with payment.");
-      console.error("handlePayRent ABORTED: Missing tenant, property, or valid rentAmount:", {tenant, property});
+      console.error("Payment ABORTED: Missing tenant, property, or valid rentAmount.", {tenant, property});
       setTimeout(() => setMessage(''), 4000);
       return;
     }
@@ -142,10 +143,9 @@ function TenantDashboard() {
     setMessage("Initializing payment...");
     try {
       const stripe = await stripePromise;
-      // --- STEP 2: Check if Stripe.js loaded ---
       if (!stripe) {
-        setMessage("Stripe.js could not be loaded. Please check your internet connection or if your Stripe key is valid. Contact support if the issue persists.");
-        console.error("handlePayRent ABORTED: Stripe.js failed to load (stripe object is null). This usually means the publishable key was invalid or Stripe's script was blocked.");
+        setMessage("Stripe.js could not be loaded. This might be due to an invalid Stripe key or network issues. Please try again or contact support.");
+        console.error("Payment ABORTED: Stripe.js failed to load (stripe object is null).");
         setIsActionLoading(false);
         setTimeout(() => setMessage(''), 5000);
         return;
@@ -165,56 +165,52 @@ function TenantDashboard() {
         body: JSON.stringify(requestBody),
       });
 
-      // --- STEP 3: Check response from your backend ---
       console.log('8. Create session backend response status:', response.status);
+      const responseText = await response.text(); // Get text first to avoid parse error if not JSON
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Failed to parse error from server. Server returned non-JSON."}) );
-        console.error('handlePayRent ERROR: Server error during create-checkout-session:', errorData, 'Status:', response.status);
+        let errorData = { error: `Server error (Status: ${response.status}). Response: ${responseText}` };
+        try { errorData = JSON.parse(responseText); } catch (e) { /* Keep default error if not JSON */ }
+        console.error('Payment ERROR: Server error during create-checkout-session:', errorData);
         throw new Error(errorData.error || `Failed to create Stripe payment session (Status: ${response.status}). Please try again.`);
       }
-      const session = await response.json();
+      const session = JSON.parse(responseText);
       console.log('9. Session object received from backend:', session);
 
       if (!session || !session.id) {
-        console.error('handlePayRent ERROR: Invalid session object or session.id missing from backend response:', session);
+        console.error('Payment ERROR: Invalid session object or session.id missing from backend response:', session);
         throw new Error("Received an invalid session from the server. Cannot proceed with payment.");
       }
 
-      // --- STEP 4: Attempt to redirect to Stripe ---
       console.log('10. Redirecting to Stripe Checkout with session ID:', session.id);
       const result = await stripe.redirectToCheckout({ sessionId: session.id });
 
-      // --- STEP 5: Check result from Stripe redirect ---
       if (result.error) {
-        console.error('handlePayRent ERROR: Stripe redirectToCheckout failed:', result.error);
+        console.error('Payment ERROR: Stripe redirectToCheckout failed:', result.error);
         setMessage(`Payment Error: ${result.error.message}`);
         setTimeout(() => setMessage(''), 6000);
       } else {
-        console.log('11. Stripe redirectToCheckout was called. If no error, user should be redirected. If still on this page, something else went wrong or user came back.');
+        console.log('11. Stripe redirectToCheckout was called. If no error, user should be redirected.');
       }
     } catch (error) {
-      console.error("handlePayRent CRITICAL CATCH BLOCK Error:", error);
+      console.error("Payment CRITICAL CATCH BLOCK Error:", error);
       setMessage(`Payment Process Error: ${error.message}`);
       setTimeout(() => setMessage(''), 6000);
     } finally {
       setIsActionLoading(false);
-      if (message === "Initializing payment...") { // Clear "Initializing" only if no other message took precedence
+      if (message === "Initializing payment...") {
         setMessage("");
       }
       console.log('--- handlePayRent Finished ---');
     }
   };
 
-
   const handleRaiseRequest = async () => {
-    // ... (keep this function as is from the previous "corrected" version)
-    if (!tenant || !property) return;
+    if (!tenant || !property) { console.error("Cannot raise request: tenant or property data missing."); return; }
     if (!API_BASE_URL) {
         setMessage('API URL is not configured. Cannot submit request.');
         console.error("REACT_APP_API_BASE_URL is not set");
         return;
     }
-
     const description = prompt("Describe the maintenance issue (e.g., Leaky Faucet in Kitchen):");
     if (!description || description.trim() === "") {
       setMessage("Maintenance description cannot be empty.");
@@ -223,24 +219,23 @@ function TenantDashboard() {
     }
     setIsActionLoading(true);
     const newRequest = {
-      id: `temp-mr-${Date.now()}`, 
+      id: `temp-mr-${Date.now()}`,
       flatNo: tenant.flatNo, description: description.trim(),
       status: "Pending", date: new Date().toISOString().split("T")[0], remarks: "",
     };
-    const originalProperty = JSON.parse(JSON.stringify(property)); // Deep copy for revert
+    const originalProperty = JSON.parse(JSON.stringify(property));
     const optimisticProperty = {
         ...property,
         maintenanceRequests: [...(property.maintenanceRequests || []), newRequest]
     };
     setProperty(optimisticProperty);
-
     try {
       const res = await fetch(`${API_BASE_URL}/properties/${property.id}`, {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(optimisticProperty)
       });
       if (!res.ok) {
-        setProperty(originalProperty); 
+        setProperty(originalProperty);
         const errorData = await res.json().catch(() => ({message: "Failed to submit request."}));
         throw new Error(errorData.message || "Failed to submit maintenance request.");
       }
@@ -250,7 +245,7 @@ function TenantDashboard() {
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error("Raise request error:", error);
-      setProperty(originalProperty); 
+      setProperty(originalProperty);
       setMessage(`Error submitting request: ${error.message}`);
       setTimeout(() => setMessage(''), 5000);
     } finally {
@@ -259,7 +254,6 @@ function TenantDashboard() {
   };
 
   const handleDeleteRequest = async (requestIdToDelete) => {
-    // ... (keep this function as is from the previous "corrected" version)
     if (!property || !requestIdToDelete || !window.confirm("Are you sure you want to delete this maintenance request?")) return;
     if (!API_BASE_URL) {
         setMessage('API URL is not configured. Cannot delete request.');
@@ -267,17 +261,15 @@ function TenantDashboard() {
         return;
     }
     setIsActionLoading(true);
-    
-    const originalProperty = JSON.parse(JSON.stringify(property)); // Deep copy
+    const originalProperty = JSON.parse(JSON.stringify(property));
     const updatedMaintenanceRequests = (property.maintenanceRequests || []).filter(r => r.id !== requestIdToDelete);
     const optimisticProperty = { ...property, maintenanceRequests: updatedMaintenanceRequests };
     setProperty(optimisticProperty);
-
     try {
       const res = await fetch(`${API_BASE_URL}/properties/${property.id}`, {
         method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(optimisticProperty)
       });
-      if (!res.ok) { 
+      if (!res.ok) {
         setProperty(originalProperty);
         const errorData = await res.json().catch(() => ({message: "Failed to delete request."}));
         throw new Error(errorData.message || "Failed to delete maintenance request.");
@@ -295,33 +287,54 @@ function TenantDashboard() {
   };
 
   // --- RENDER LOGIC ---
+  console.log("TenantDashboard State before render:", { loading, isConfigError, tenant, property, message, configErrorMessage });
 
-  if (loading) return ( // Keep a general loading screen first
-    <div className="tenant-dashboard-page-wrapper">
-      <div className="loading-container tenant-animate-on-load is-visible">
-        <span className="loading-spinner-large"></span>
-        <p className="loading-text">Loading Your Dashboard...</p>
+  if (loading) {
+    return (
+      <div className="tenant-dashboard-page-wrapper">
+        <div className="loading-container tenant-animate-on-load is-visible">
+          <span className="loading-spinner-large"></span>
+          <p className="loading-text">Loading Your Dashboard...</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  if (isConfigError || !tenant || !property) { // If config error OR data loading failed
+  if (isConfigError) {
      return (
         <div className="tenant-dashboard-page-wrapper">
             <div className="error-container tenant-dashboard tenant-animate-on-load is-visible">
-                <h2 className="dashboard-title">{isConfigError ? "Configuration Issue" : "Access Error"}</h2>
-                <p className="dashboard-message error">{message || configErrorMessage || "Could not load your information. Please ensure you are logged in correctly or contact support."}</p>
+                <h2 className="dashboard-title">Configuration Issue</h2>
+                <p className="dashboard-message error">{configErrorMessage || "A configuration error occurred."}</p>
+                 <button onClick={() => navigate('/login')} className="dashboard-button primary">Go to Login</button>
+            </div>
+        </div>
+    );
+  }
+  
+  if (!tenant || !property) { // This should ideally be caught by `message` having an error from fetch
+     return (
+        <div className="tenant-dashboard-page-wrapper">
+            <div className="error-container tenant-dashboard tenant-animate-on-load is-visible">
+                <h2 className="dashboard-title">Data Error</h2>
+                <p className="dashboard-message error">{message || "Could not load tenant or property data. Please try again or contact support."}</p>
                  <button onClick={() => navigate('/login')} className="dashboard-button primary">Go to Login</button>
             </div>
         </div>
     );
   }
 
-  // If loading is false, and no config error, and tenant & property are loaded:
+  // If all checks pass, render the dashboard
   const tenantMaintenanceRequests = (property.maintenanceRequests || []).filter(req => req.flatNo === tenant.flatNo).sort((a,b) => new Date(b.date) - new Date(a.date));
   const tenantPaymentHistory = (tenant.paymentHistory || []).sort((a,b) => new Date(b.date) - new Date(a.date));
   const ownerNotifications = (tenant.notifiedMessages || []).sort((a,b) => new Date(b.date) - new Date(a.date));
-  const canPayRent = tenant.paymentStatus === "Pending" && tenant.rentAmount > 0 && STRIPE_PUBLISHABLE_KEY && STRIPE_PUBLISHABLE_KEY.startsWith('pk_') && API_BASE_URL;
+  
+  // Ensure canPayRent considers all necessary states, including isConfigError specifically for Stripe
+  const isStripeConfigured = STRIPE_PUBLISHABLE_KEY && STRIPE_PUBLISHABLE_KEY.startsWith('pk_');
+  const canPayRent = tenant.paymentStatus === "Pending" && 
+                     tenant.rentAmount > 0 && 
+                     API_BASE_URL && 
+                     isStripeConfigured;
 
   return (
     <div className="tenant-dashboard-page-wrapper">
@@ -336,35 +349,40 @@ function TenantDashboard() {
           </div>
           <h2 className="dashboard-title">My Dashboard</h2>
         </header>
-        {/* Display general messages, but not if it's a config error (handled by the full-screen error) */}
-        {message && !isConfigError && (
+        
+        {message && ( // General messages (not config errors which have their own screen)
             <p className={`dashboard-message ${message.toLowerCase().includes('error') || message.toLowerCase().includes('failed') ? 'error' : 'success'} tenant-animate-on-load`} data-delay="100">{message}</p>
         )}
 
         <section className="tenant-info-section tenant-animate-on-load" data-delay="150">
-          <h3 className="section-title">Welcome, {tenant.name}!</h3>
+          <h3 className="section-title">Welcome, {tenant.name || 'Tenant'}!</h3>
           <div className="details-grid">
-            <p><strong>Property:</strong> {property.name}</p>
-            <p><strong>Flat No:</strong> {tenant.flatNo}</p>
-            <p><strong>Rent:</strong> ₹{tenant.rentAmount}</p>
-            <p><strong>Status:</strong> <span className={`status-pill status-${tenant.paymentStatus?.toLowerCase()}`}>{tenant.paymentStatus}</span></p>
+            <p><strong>Property:</strong> {property.name || 'N/A'}</p>
+            <p><strong>Flat No:</strong> {tenant.flatNo || 'N/A'}</p>
+            <p><strong>Rent:</strong> ₹{tenant.rentAmount || 0}</p>
+            <p><strong>Status:</strong> <span className={`status-pill status-${(tenant.paymentStatus || 'pending').toLowerCase()}`}>{tenant.paymentStatus || 'Pending'}</span></p>
           </div>
           {tenant.paymentStatus === 'Paid' && tenant.lastNotify && <p className="last-paid-info">Last payment/update: {new Date(tenant.lastNotify).toLocaleDateString()}</p>}
         </section>
 
         <section className="tenant-actions-section tenant-animate-on-load" data-delay="200">
-          {canPayRent ? (
+          {canPayRent && (
             <button className="dashboard-button pay-rent-btn" onClick={handlePayRent} disabled={isActionLoading}>
               {isActionLoading ? <span className="spinner"></span> : `Pay Rent (₹${tenant.rentAmount})`}
             </button>
-          ) : (
-            tenant.paymentStatus === "Pending" && tenant.rentAmount > 0 && (
-             <button className="dashboard-button pay-rent-btn" disabled={true} title="Payment system is currently unavailable. Please check configuration or contact support.">
+          )}
+          {/* Show disabled Pay Rent button if it's pending but config is bad */}
+          {!canPayRent && tenant.paymentStatus === "Pending" && tenant.rentAmount > 0 && (
+             <button className="dashboard-button pay-rent-btn" disabled={true} title={!API_BASE_URL ? "API not configured" : !isStripeConfigured ? "Stripe not configured" : "Payment unavailable"}>
               Pay Rent (Unavailable)
             </button>
-            )
           )}
-          <button className="dashboard-button raise-request-btn" onClick={handleRaiseRequest} disabled={isActionLoading || !API_BASE_URL}>
+          <button 
+            className="dashboard-button raise-request-btn" 
+            onClick={handleRaiseRequest} 
+            disabled={isActionLoading || !API_BASE_URL}
+            title={!API_BASE_URL ? "API not configured" : ""}
+          >
             {isActionLoading ? <span className="spinner"></span> : 'Raise Maintenance Request'}
           </button>
         </section>
@@ -373,14 +391,19 @@ function TenantDashboard() {
           <section className="dashboard-column maintenance-column">
             <h4 className="column-title">My Maintenance Requests</h4>
             {tenantMaintenanceRequests.length > 0 ? (
-              tenantMaintenanceRequests.map((req) => (
-                <div key={req.id || `mr-${req.date}-${req.flatNo}-${req.description.slice(0,5)}`} className="info-card maintenance-card">
+              tenantMaintenanceRequests.map((req, index) => (
+                <div key={req.id || `mr-${index}-${req.flatNo}`} className="info-card maintenance-card">
                   <p className="card-text"><strong>Issue:</strong> {req.description}</p>
-                  <p className="card-text"><strong>Status:</strong> <span className={`status-pill status-${req.status?.toLowerCase().replace(' ', '-')}`}>{req.status}</span></p>
-                  <p className="card-date"><em>Submitted:</em> {new Date(req.date).toLocaleDateString()}</p>
+                  <p className="card-text"><strong>Status:</strong> <span className={`status-pill status-${(req.status || 'pending').toLowerCase().replace(' ', '-')}`}>{req.status}</span></p>
+                  <p className="card-date"><em>Submitted:</em> {req.date ? new Date(req.date).toLocaleDateString() : 'N/A'}</p>
                   {req.remarks && <p className="card-remarks"><em>Owner Remarks:</em> {req.remarks}</p>}
                   {req.status === "Pending" && (
-                     <button className="dashboard-button delete-btn-small" onClick={() => handleDeleteRequest(req.id)} disabled={isActionLoading || !API_BASE_URL}>
+                     <button 
+                        className="dashboard-button delete-btn-small" 
+                        onClick={() => handleDeleteRequest(req.id)} 
+                        disabled={isActionLoading || !API_BASE_URL}
+                        title={!API_BASE_URL ? "API not configured" : ""}
+                    >
                         {isActionLoading ? <span className="spinner-small"></span> : 'Delete'}
                     </button>
                   )}
@@ -393,12 +416,12 @@ function TenantDashboard() {
             <h4 className="column-title">My Payment History</h4>
             {tenantPaymentHistory.length > 0 ? (
               <ul className="info-list">
-                {tenantPaymentHistory.map((entry) => (
-                  <li key={entry.id || `ph-${entry.date}-${entry.amount}-${entry.status}`} className="info-card payment-card">
+                {tenantPaymentHistory.map((entry, index) => (
+                  <li key={entry.id || `ph-${index}-${entry.date}`} className="info-card payment-card">
                     <div className="payment-details">
-                      <span className="payment-amount">Amount: ₹{entry.amount}</span>
-                      <span className="payment-date">Date: {new Date(entry.date).toLocaleDateString()}</span>
-                      <span className={`payment-status status-pill status-${entry.status?.toLowerCase()}`}>{entry.status}</span>
+                      <span className="payment-amount">Amount: ₹{entry.amount || 0}</span>
+                      <span className="payment-date">Date: {entry.date ? new Date(entry.date).toLocaleDateString() : 'N/A'}</span>
+                      <span className={`payment-status status-pill status-${(entry.status || 'unknown').toLowerCase()}`}>{entry.status || 'Unknown'}</span>
                     </div>
                   </li>
                 ))}
@@ -413,10 +436,10 @@ function TenantDashboard() {
           <h4 className="column-title">Notifications from Owner</h4>
           {ownerNotifications.length > 0 ? (
             <ul className="info-list">
-              {ownerNotifications.map((msg) => (
-                <li key={msg.id || `notif-${msg.date}-${msg.message.slice(0,5)}`} className="info-card notification-card">
+              {ownerNotifications.map((msg, index) => (
+                <li key={msg.id || `notif-${index}-${msg.date}`} className="info-card notification-card">
                   <p className="card-text">{msg.message}</p>
-                  <span className="card-date">Received: {new Date(msg.date).toLocaleDateString()}</span>
+                  <span className="card-date">Received: {msg.date ? new Date(msg.date).toLocaleDateString() : 'N/A'}</span>
                 </li>
               ))}
             </ul>
