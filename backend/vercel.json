@@ -1,14 +1,15 @@
+// backend/vercel.json
 {
   "version": 2,
   "builds": [
     {
-      "src": "api/index.js", 
+      "src": "api/index.js", // Ensure this is the correct path to your Express app export
       "use": "@vercel/node"
     }
   ],
   "rewrites": [
-    { "source": "/users(.*)", "destination": "/api/index" },
-    { "source": "/properties(.*)", "destination": "/api/index" },
-    { "source": "/api/payment(.*)", "destination": "/api/index" } 
+    // This is the most common and effective rewrite for a full Express app
+    // It means any request to your backend domain will be handled by api/index.js
+    { "source": "/(.*)", "destination": "/api/index" }
   ]
 }
