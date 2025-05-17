@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.js", 
+      "use": "@vercel/node"
+    }
+  ],
+  "rewrites": [
+    { "source": "/users(.*)", "destination": "/api/index" },
+    { "source": "/properties(.*)", "destination": "/api/index" },
+    { "source": "/api/payment(.*)", "destination": "/api/index" } 
+  ]
+}
