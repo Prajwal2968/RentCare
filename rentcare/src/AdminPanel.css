@@ -6,14 +6,14 @@
 .admin-panel-page-wrapper {
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: flex-start; /* Align to top for potentially long content */
   min-height: 100vh;
   width: 100%;
-  background-color: #f0f4f8;
-  padding: 40px 20px;
+  background-color: #f0f4f8; /* Light grayish blue background */
+  padding: 40px 20px;      /* Generous padding */
   box-sizing: border-box;
   font-family: 'Poppins', sans-serif;
-  color: #334155;
+  color: #334155; /* Default text color (slate-700) */
 }
 
 /* --- Admin Access Container (Secret Key Screen) --- */
@@ -22,30 +22,30 @@
   max-width: 480px;
   background-color: #ffffff;
   padding: 40px 50px;
-  border-radius: 16px;
-  box-shadow: 0 15px 40px rgba(0, 20, 50, 0.1);
+  border-radius: 16px; /* Softer rounded corners */
+  box-shadow: 0 15px 40px rgba(0, 20, 50, 0.1); /* Softer, deeper shadow */
   text-align: center;
-  margin-top: 5vh;
+  margin-top: 5vh; /* Push down from the top a bit */
 }
 .admin-logo-icon {
   width: 48px; height: auto; margin-bottom: 20px;
 }
 .admin-access-heading {
-  font-size: 1.8rem;
-  color: #1e3a8a;
+  font-size: 1.8rem; /* Slightly larger */
+  color: #1e3a8a; /* Darker blue (blue-800) */
   margin-bottom: 10px;
   font-weight: 700;
 }
 .admin-access-subheading {
   font-size: 1rem;
-  color: #4a5568;
+  color: #4a5568; /* Slate-600 */
   margin-bottom: 30px;
 }
 
 /* --- Main Admin Panel Container --- */
 .admin-container {
   width: 100%;
-  max-width: 960px;
+  max-width: 960px; /* Common max-width for content */
   background-color: #ffffff;
   padding: 30px 40px;
   border-radius: 16px;
@@ -58,11 +58,11 @@
   align-items: center;
   margin-bottom: 30px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0; /* Slate-200 border */
 }
 .admin-main-heading {
   font-size: 2rem;
-  color: #1e3a8a;
+  color: #1e3a8a; /* Darker blue */
   font-weight: 700;
   margin: 0;
 }
@@ -71,245 +71,261 @@
 .admin-section {
   margin-bottom: 40px;
   padding: 25px;
-  background-color: #f8fafc;
+  background-color: #f8fafc; /* Very light gray (slate-50) */
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e2e8f0; /* Slate-200 border */
 }
 
 .admin-section-heading {
   font-size: 1.5rem;
-  color: #334155;
+  color: #334155; /* Slate-700 */
   font-weight: 600;
   margin-top: 0;
   margin-bottom: 25px;
   padding-bottom: 10px;
-  border-bottom: 1px dashed #cbd5e0;
+  border-bottom: 1px dashed #cbd5e0; /* Slate-300 */
 }
 
 /* --- Forms & Inputs --- */
 .admin-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 20px; /* Space between input groups */
 }
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  position: relative; /* Keep for label positioning if needed, or for absolute positioned elements inside */
-}
-
-/* Styles for password input group to align icon */
-.input-group.password-group {
-  position: relative; /* Important for absolute positioning the button */
-}
-
-.input-group.password-group .admin-input {
-  padding-right: 45px; /* Add padding to make space for the icon button */
+  gap: 8px; /* Space between label and input */
 }
 
 .input-group label {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #475569;
+  color: #475569; /* Slate-600 */
 }
 .admin-input {
   width: 100%;
   padding: 12px 16px;
   font-size: 1rem;
-  border: 1px solid #cbd5e0;
+  border: 1px solid #cbd5e0; /* Slate-300 border */
   border-radius: 8px;
   background-color: #ffffff;
-  color: #1e293b;
+  color: #1e293b; /* Slate-800 text */
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  box-sizing: border-box;
+  box-sizing: border-box; /* Important for consistent sizing */
+  line-height: 1.5; /* Ensures consistent height */
 }
 .admin-input:focus {
-  border-color: #FF7F50;
+  border-color: #FF7F50; /* Coral focus */
   outline: none;
-  box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.2);
+  box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.2); /* Coral focus ring */
+}
+.admin-input::placeholder {
+  color: #94a3b8; /* Slate-400 for placeholder */
 }
 
+/* Specifics for Password Input in Form with Eye Icon */
+.input-group.password-group {
+  position: relative; /* For absolute positioning of the button */
+}
+.input-group.password-group .admin-input {
+  padding-right: 45px; /* Make space for the eye icon button */
+}
 .password-toggle-btn {
   position: absolute;
-  right: 1px; /* Position inside the border */
-  top: 50%;   /* Align to vertical center relative to the input's height */
-  bottom: 1px; /* Position inside the border */
-  transform: translateY(-50%); /* Fine-tune vertical centering */
-  height: calc(100% - 2px); /* Match input height minus borders */
-  background: transparent;
-  border: none;
-  border-left: 1px solid #e2e8f0; /* Optional: separator line */
-  cursor: pointer;
-  color: #64748b;
-  padding: 0 10px; /* Adjust padding */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-top-right-radius: 7px; /* Match input's border radius */
-  border-bottom-right-radius: 7px; /* Match input's border radius */
+  right: 1px; /* Position inside the input's border */
+  top: 0;     /* Align to the top of the input relative to the label */
+  bottom: 0;  /* Align to the bottom of the input relative to the label */
+  /* Correct vertical alignment if label is present:
+     The button needs to align with the INPUT FIELD itself.
+     If input-group contains label + input + button as siblings: */
+  margin-top: auto; /* If label is present, these help after label's space */
+  margin-bottom: auto; /* If label is present */
+  /* More direct way assuming label is above input in flex column: */
+  /* This positions button relative to the input field */
+  /* It assumes the input field comes after the label in the DOM if label exists */
 }
-/* Adjust top position if there is a label above the input */
-.input-group label + .admin-input + .password-toggle-btn, /* If input directly follows label */
-.input-group > .admin-input + .password-toggle-btn { /* If input is direct child (no label) */
-    top: calc(50% + 10px); /* Heuristic, adjust 10px based on your label's bottom margin / input's top spacing */
-    /* If label and input are tightly packed, this might be simpler:
-    top: 50%;
-    transform: translateY(-50%);
-    And ensure the parent .password-group wraps ONLY the input and the button */
-}
-/* Refined positioning for when label IS present: */
-.input-group.password-group label + div, /* Assuming input & button are wrapped for alignment */
-.input-group.password-group > .admin-input { /* If input is direct child */
-    /* This structure is getting complex; simpler if input and button are in a sub-div */
-}
-/* Let's simplify: Assuming the button is positioned relative to the .password-group which contains the input */
-.input-group.password-group .password-toggle-btn {
+/* More precise centering for the FORM's password input eye icon */
+/* This targets the button when it's a sibling to an input that follows a label */
+.input-group label + .admin-input + .password-toggle-btn,
+/* This targets the button when it's a sibling to an input that is a direct child (no label) */
+.input-group > .admin-input + .password-toggle-btn {
     position: absolute;
     right: 1px;
-    /* Vertically center based on the input's height. The input has padding 12px, font-size 1rem (approx 16px), border 1px. Total height around 12+16+12+2 = 42px. Button is 20px. */
-    top: calc(50% + 4px); /* Adjust this 4px (half of (input_padding_top - button_height/2)) if label is present */
-    /* More robust: target the top of input if label is not there */
-    /* If label is always present, target bottom of label + half of input height */
-    transform: translateY(-50%);
-    /* The following assumes the button is a sibling of the input within password-group */
-}
-/* Let's try again with more precise targeting for the label scenario */
-.input-group.password-group > .admin-input {
-    /* Input specific styles if needed, already handled by .admin-input */
-}
-.input-group.password-group > .password-toggle-btn {
-    position: absolute;
-    right: 1px;
-    /* After the label, the input starts. The button should align with the input. */
-    /* If label height is approx 20px and margin-bottom 8px */
-    /* Input starts around 28px from top of .input-group */
-    /* Input height is approx 40-44px (padding + font + border) */
-    /* So center of input is around 28 + 21 = 49px from top of .input-group */
-    top: calc( (1em * 1.5) + 8px + (12px * 2 + 1em) / 2 ); /* (label line-height + label margin) + (input visual height / 2) */
-    /* This is getting too complex. Simpler flexbox approach on a wrapper around input+button is better.
-       For now, sticking to absolute positioning: */
-    top: 50%; /* This will center it relative to the .input-group height */
-    /* If label makes .input-group taller, we need to adjust.
-       Let's assume the button is positioned based on the *input's height only*.
-       This requires the input to be position: relative, or the button to be positioned after the input in DOM.
+    /* To center it vertically with the input field:
+       We need the height of the input field itself.
+       Input padding: 12px top/bottom = 24px
+       Input font-size: 1rem (approx 16px) * line-height 1.5 = 24px
+       Input border: 1px top/bottom = 2px
+       Approx input height = 24 + 24 + 2 = 50px.
+       Button height (SVG) is 20px.
+       So, top should be (50px - 20px) / 2 = 15px from the input's top border.
     */
-}
-/* Corrected approach for eye icon centering with absolute positioning:
-   The button is a sibling of the input. Position it relative to the input.
-   For this, the input-group itself can be position:relative.
-*/
-.input-group.password-group .password-toggle-btn {
-    position: absolute;
-    right: 10px; /* Some padding from the edge */
-    top: calc(1em + 12px + 2px); /* label font-size + input padding-top + input border-top */
-    /* This positions it at the top edge of the input's content area */
-    /* To center it: */
-    height: 20px; /* Eye icon height */
-    margin-top: calc((1em + 12px*2 + 2px*2 - 20px) / 2); /* (input_visual_height - eye_icon_height) / 2 */
-    /* This calculates the top margin needed to center the 20px icon within the input's visual height */
-    /* Let's simplify further by just aligning to the input's center line assuming its height */
-    /* Assuming input visual height around 40px. Button 20px. */
-    top: 50%; 
+    top: 50%; /* This centers relative to the input's height part */
     transform: translateY(-50%);
-    /* For the above to work cleanly, the button should be positioned relative to the input, not the whole group if label is present.
-       The current HTML structure makes this tricky with pure absolute on the button.
-       A common solution is to wrap input and button in another div.
-       Given the current structure, if label is present, this might be slightly off.
-       The top: 55% was a decent approximation. Let's refine:
-    */
-}
-/* Final attempt at centering the eye icon in the input with absolute positioning */
-.input-group.password-group {
-    position: relative; /* Parent for absolute positioning */
-}
-.input-group.password-group .password-toggle-btn {
-    position: absolute;
-    right: 1px; /* Inside the input's border */
-    top: 1px; /* Inside the input's border */
-    bottom: 1px; /* Inside the input's border */
+    height: calc(100% - 2px); /* Match visual height of input content area */
     width: 40px; /* Fixed width for the button area */
     display: flex;
     align-items: center;
     justify-content: center;
-    background: transparent; /* Or a very light shade matching input focus */
+    background: transparent;
     border: none;
-    border-left: 1px solid #e2e8f0;
-    border-top-right-radius: 7px; /* To match input if it's on the right */
+    border-left: 1px solid #e2e8f0; /* Optional separator */
+    border-top-right-radius: 7px; /* Match input's border radius */
     border-bottom-right-radius: 7px;
     cursor: pointer;
-    color: #64748b;
+    color: #64748b; /* Slate-500 */
 }
-.input-group.password-group .password-toggle-btn:hover {
-    color: #FF7F50;
+.input-group.password-group .password-toggle-btn:hover svg {
+    color: #FF7F50; /* Coral hover for SVG */
 }
 
 
 /* --- Buttons --- */
 .admin-button {
-  padding: 10px 20px; border: none; border-radius: 8px; font-size: 0.95rem;
-  font-weight: 600; cursor: pointer; transition: all 0.3s ease; text-transform: capitalize;
-}
-.admin-button.primary { background-color: #FF7F50; color: white; box-shadow: 0 4px 12px rgba(255, 127, 80, 0.25); }
-.admin-button.primary:hover { background-color: #E57248; box-shadow: 0 6px 15px rgba(255, 127, 80, 0.35); transform: translateY(-2px); }
-.admin-button.logout { background-color: #ef4444; color: white; }
-.admin-button.logout:hover { background-color: #dc2626; }
-.admin-button.edit { background-color: #f59e0b; color: white; margin-right: 8px; }
-.admin-button.edit:hover { background-color: #d97706; }
-.admin-button.delete { background-color: #71717a; color: white; }
-.admin-button.delete:hover { background-color: #52525b; }
-.admin-button:disabled { background-color: #9ca3af; cursor: not-allowed; box-shadow: none; transform: none; }
-.admin-button .spinner { margin-right: 8px; width: 16px; height: 16px; border-width: 2px; }
-
-/* --- Messages & Feedback --- */
-.admin-message {
-  text-align: center; margin-top: 20px; font-size: 0.9rem; font-weight: 500;
-  padding: 10px 15px; border-radius: 8px;
-}
-.admin-message.success { color: #059669; background-color: #d1fae5; border: 1px solid #a7f3d0; }
-.admin-message.error { color: #991b1b; background-color: #fee2e2; border: 1px solid #fecaca; }
-.admin-message.info { color: #1d4ed8; background-color: #dbeafe; border: 1px solid #bfdbfe; }
-.loading-text, .no-data-text { text-align: center; padding: 20px; font-style: italic; color: #64748b; }
-
-/* --- Table --- */
-.admin-table-wrapper { overflow-x: auto; }
-.admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-.admin-table th, .admin-table td {
-  border: 1px solid #e2e8f0; padding: 12px 15px;
-  text-align: left; vertical-align: middle;
-}
-.admin-table th { background-color: #f1f5f9; color: #334155; font-weight: 600; text-transform: capitalize; }
-.admin-table tr:nth-child(even) { background-color: #f8fafc; }
-.action-buttons { display: flex; gap: 8px; justify-content: flex-start; }
-
-/* Styles for password cell in table */
-.password-cell {
-  display: flex;
-  align-items: center;
-  justify-content: space-between; /* Pushes icon to the right */
-  gap: 10px; /* Space between password text and icon */
-}
-.password-cell span {
-  flex-grow: 1; /* Allows text to take available space */
-  overflow: hidden; /* Optional: for very long passwords if not breaking */
-  text-overflow: ellipsis; /* Optional */
-}
-.table-eye-icon {
-  background: transparent;
+  padding: 10px 20px;
   border: none;
-  color: #64748b;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  padding: 2px; /* Minimal padding */
-  display: inline-flex; /* For better alignment of SVG */
+  transition: all 0.3s ease;
+  text-transform: capitalize;
+  display: inline-flex; /* For aligning spinner */
   align-items: center;
   justify-content: center;
 }
+.admin-button.primary {
+  background-color: #FF7F50; /* Coral */
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 127, 80, 0.25);
+}
+.admin-button.primary:hover {
+  background-color: #E57248; /* Darker Coral */
+  box-shadow: 0 6px 15px rgba(255, 127, 80, 0.35);
+  transform: translateY(-2px);
+}
+.admin-button.logout { background-color: #ef4444; color: white; } /* Red-500 */
+.admin-button.logout:hover { background-color: #dc2626; } /* Red-600 */
+.admin-button.edit { background-color: #f59e0b; color: white; margin-right: 8px; } /* Amber-500 */
+.admin-button.edit:hover { background-color: #d97706; } /* Amber-600 */
+.admin-button.delete { background-color: #71717a; color: white; } /* Zinc-500 */
+.admin-button.delete:hover { background-color: #52525b; } /* Zinc-600 */
+.admin-button:disabled {
+  background-color: #9ca3af; /* Gray-400 */
+  color: #e5e7eb; /* Gray-200 */
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+.admin-button .spinner {
+  margin-right: 8px; /* Space between spinner and text */
+  width: 16px; height: 16px; border-width: 2px; /* Make spinner slightly smaller if inside button */
+}
+
+/* --- Messages & Feedback --- */
+.admin-message {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 10px 15px;
+  border-radius: 8px;
+}
+.admin-message.success { color: #059669; background-color: #d1fae5; border: 1px solid #a7f3d0; } /* Green */
+.admin-message.error { color: #991b1b; background-color: #fee2e2; border: 1px solid #fecaca; }   /* Red */
+.admin-message.info { color: #1d4ed8; background-color: #dbeafe; border: 1px solid #bfdbfe; }    /* Blue */
+.loading-text, .no-data-text {
+  text-align: center; padding: 20px; font-style: italic; color: #64748b; /* Slate-500 */
+}
+
+/* --- Table --- */
+.admin-table-wrapper {
+  overflow-x: auto; /* Allows horizontal scrolling on small screens */
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse; /* Cleaner borders */
+  margin-top: 0; /* No margin if wrapper has border */
+}
+.admin-table th, .admin-table td {
+  border-bottom: 1px solid #e2e8f0; /* Horizontal lines */
+  border-left: none; /* Remove vertical lines if wrapper has border */
+  border-right: none;
+  padding: 12px 15px;
+  text-align: left;
+  vertical-align: middle; /* Important for centering content */
+}
+.admin-table th:first-child, .admin-table td:first-child {
+  padding-left: 20px; /* More padding for first cell */
+}
+.admin-table th:last-child, .admin-table td:last-child {
+  padding-right: 20px; /* More padding for last cell */
+}
+.admin-table th {
+  background-color: #f1f5f9; /* Slate-100 */
+  color: #334155; /* Slate-700 */
+  font-weight: 600;
+  text-transform: capitalize;
+  border-top: none; /* No top border for header if wrapper has border */
+}
+.admin-table tr:last-child td {
+    border-bottom: none; /* No bottom border for last row if wrapper has border */
+}
+.admin-table tr:nth-child(even) {
+  background-color: #f8fafc; /* Slate-50, for striping */
+}
+.admin-table tr:hover {
+    background-color: #eff6ff; /* Blue-50, subtle hover */
+}
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start; /* Align buttons to the start */
+}
+
+/* Styles for password cell in table */
+.password-cell {
+  display: flex;            /* Enable flexbox for alignment */
+  align-items: center;      /* Vertically center items within the cell */
+  justify-content: space-between; /* Pushes password text to left, icon to right */
+  gap: 8px;                 /* Space between password text and icon */
+  min-width: 150px;         /* Give it some minimum width to prevent excessive squishing */
+}
+
+.password-cell span {
+  flex-grow: 1;             /* Allows the password text to take up available space */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: monospace;   /* Often good for password display */
+  font-size: 0.9em;        /* Slightly smaller if needed */
+  letter-spacing: 1.5px;   /* Makes dots look more like password fields */
+}
+
+.table-eye-icon {
+  background: transparent;
+  border: none;
+  color: #64748b; /* Slate-500 */
+  cursor: pointer;
+  padding: 2px;           /* Small padding around SVG */
+  display: inline-flex;   /* Helps with SVG alignment */
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;         /* Prevent icon from shrinking */
+  border-radius: 4px;     /* Slight rounding for hover effect */
+  transition: background-color 0.2s;
+}
 .table-eye-icon:hover {
-  color: #FF7F50;
+  color: #FF7F50; /* Coral on hover */
+  background-color: #fde8e0; /* Very light coral background on hover */
 }
 .table-eye-icon svg {
-  width: 18px; /* Slightly smaller icon for table */
+  width: 18px;
   height: 18px;
+  display: block;
 }
 
 
@@ -319,7 +335,6 @@
   transform: translateY(15px);
   transition: opacity 0.5s ease-out, transform 0.5s ease-out;
 }
-/* Ensure data-delay is respected */
 .admin-animate-on-load.is-visible {
   opacity: 1;
   transform: translateY(0);
@@ -327,30 +342,99 @@
 
 .spinner {
   display: inline-block; width: 20px; height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  border: 3px solid rgba(255, 255, 255, 0.3); /* For primary button spinner */
   border-radius: 50%; border-top-color: #fff;
   animation: adminSpin 1s ease-in-out infinite;
+}
+.admin-button.primary:disabled .spinner { /* Spinner for disabled primary button if needed */
+    border-top-color: #d1d5db; /* Gray-300 */
 }
 @keyframes adminSpin { to { transform: rotate(360deg); } }
 
 /* --- Responsive Adjustments --- */
 @media (max-width: 768px) {
+  .admin-access-page-wrapper,
   .admin-panel-page-wrapper { padding: 20px 15px; }
   .admin-container { padding: 20px; }
-  .admin-panel-header { flex-direction: column; gap: 15px; align-items: flex-start; }
+  .admin-panel-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
   .admin-main-heading { font-size: 1.7rem; }
   .admin-section { padding: 20px; }
   .admin-section-heading { font-size: 1.3rem; }
   .admin-form { gap: 15px; }
   .admin-input { padding: 10px 14px; font-size: 0.95rem; }
-  /* .password-toggle-btn positioning might need slight tweaks here if label makes group too tall */
+
+  /* Ensure form password button still looks okay */
+  .input-group.password-group .admin-input { padding-right: 40px; }
+  .input-group.password-group label + .admin-input + .password-toggle-btn,
+  .input-group > .admin-input + .password-toggle-btn {
+      width: 35px; /* Adjust if needed for smaller input */
+  }
+
   .admin-button { padding: 9px 16px; font-size: 0.9rem; }
-  .action-buttons { flex-direction: column; align-items: flex-start; }
+  .action-buttons {
+    flex-direction: column; /* Stack action buttons */
+    align-items: stretch;   /* Make buttons full width of their container */
+    width: 100%;
+  }
   .admin-button.edit { margin-right: 0; margin-bottom: 8px; }
-  .admin-table { font-size: 0.9rem; }
-  .admin-table th, .admin-table td { padding: 10px 8px; }
-  .password-cell { flex-direction: column; align-items: flex-start; gap: 5px; }
-  .table-eye-icon { align-self: flex-start; /* Align icon to start in column layout */ }
+
+  /* Table adjustments for mobile */
+  .admin-table {
+    font-size: 0.9rem;
+    display: block; /* Allows table to become more responsive block elements */
+    width: 100%;
+  }
+  .admin-table thead {
+    display: none; /* Hide table head, use data-label for headers */
+  }
+  .admin-table tbody, .admin-table tr, .admin-table td {
+    display: block; /* Stack cells */
+    width: 100% !important; /* Override default table widths */
+    box-sizing: border-box;
+  }
+  .admin-table tr {
+    margin-bottom: 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden; /* To respect border-radius on td */
+  }
+  .admin-table td {
+    text-align: right; /* Align text to the right */
+    padding-left: 50%; /* Make space for the label */
+    position: relative;
+    border-bottom: 1px solid #e9edf2; /* Lighter border between stacked cells */
+  }
+  .admin-table td:last-child {
+    border-bottom: none;
+  }
+  .admin-table td::before { /* Pseudo-element for data labels */
+    content: attr(data-label);
+    position: absolute;
+    left: 15px;
+    width: calc(50% - 20px); /* Adjust width for label */
+    padding-right: 10px;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .password-cell {
+    /* On mobile, with stacked cells, default block behavior might be fine.
+       Flexbox is still okay, but ensure it works with td::before. */
+    justify-content: flex-end; /* Align content to the right, after the data-label */
+    padding-left: 50%; /* Maintain space for data-label */
+  }
+  .password-cell span {
+    /* Allow text to wrap on mobile within its allocated space */
+    white-space: normal;
+    text-align: right; /* Align password text to right with label */
+  }
+  .table-eye-icon {
+    /* Icon remains aligned with text due to flex on .password-cell */
+  }
 }
 
 @media (max-width: 480px) {
@@ -358,6 +442,14 @@
   .admin-access-heading { font-size: 1.5rem; }
   .admin-main-heading { font-size: 1.5rem; }
   .admin-section-heading { font-size: 1.2rem; }
-  .input-group.password-group .admin-input { padding-right: 40px; } /* Ensure space for icon */
-  .password-toggle-btn { width: 35px; } /* Adjust icon button size */
+
+  .admin-table td {
+    padding-left: 40%; /* Adjust for smaller screens */
+  }
+  .admin-table td::before {
+    width: calc(40% - 15px);
+  }
+  .password-cell {
+    padding-left: 40%;
+  }
 }
