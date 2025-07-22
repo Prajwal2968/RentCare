@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AdminPanel.css"; // Link to new AdminPanel.css
 
+// Define API_BASE_URL using an environment variable
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-// Simple eye icon (replace with a proper icon library if you have one)
+// Simple eye icon component
 const EyeIcon = ({ Rendersolid = false, ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -20,7 +21,7 @@ const EyeIcon = ({ Rendersolid = false, ...props }) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
       </>
-    ) : ( // Eye-slash equivalent
+    ) : (
       <>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 12 4.5c4.756 0 8.773 3.162 10.02 7.48.013.046.028.092.042.138m-9.028 4.34c.607.848 1.147 1.746 1.623 2.69M1.377 19.123A10.523 10.523 0 0 0 12 20.25c2.085 0 4.042-.588 5.623-1.623m0 0c.607-.848 1.147-1.746 1.623-2.69M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M21 4.755l-16.49 16.49" />
@@ -42,7 +43,6 @@ function AdminPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState({});
 
-
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -56,7 +56,8 @@ function AdminPanel() {
   }, [accessGranted]);
 
   const handleAccess = () => {
-    if (secretKey === "Prajwal@2004") { // This should ideally be an environment variable
+    // In a real app, the secret key should also be an environment variable
+    if (secretKey === "Prajwal@2004") { 
       setAccessGranted(true);
       setMessage("");
     } else {
@@ -78,25 +79,22 @@ function AdminPanel() {
   };
 
   useEffect(() => {
-    if (accessGranted && API_BASE_URL) { // Check if API_BASE_URL is set
-        fetchOwners();
-    } else if (accessGranted && !API_BASE_URL) {
-        setMessage("API URL is not configured. Cannot fetch owners.");
-        console.error("REACT_APP_API_BASE_URL is not set");
+    if (accessGranted) {
+        if (API_BASE_URL) {
+            fetchOwners();
+        } else {
+            setMessage("Error: API URL is not configured. Cannot fetch owners.");
+            console.error("REACT_APP_API_BASE_URL is not set.");
+        }
     }
-  }, [accessGranted]); // Removed API_BASE_URL from dependency array to avoid re-fetching if it changes (it shouldn't during component life)
+  }, [accessGranted]);
 
   const fetchOwners = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/users?role=owner`); // MODIFIED URL
+      const res = await fetch(`${API_BASE_URL}/users?role=owner`);
       if (!res.ok) {
-        let errorData;
-        try {
-            errorData = await res.json();
-        } catch (jsonError) {
-            throw new Error(`Failed to fetch owners: ${res.statusText}`);
-        }
+        const errorData = await res.json();
         throw new Error(errorData.message || "Failed to fetch owners");
       }
       const data = await res.json();
@@ -110,11 +108,6 @@ function AdminPanel() {
   };
 
   const handleAddOrUpdateOwner = async () => {
-    if (!API_BASE_URL) {
-        setMessage('API URL is not configured. Please check environment variables.');
-        console.error("REACT_APP_API_BASE_URL is not set");
-        return;
-    }
     if (!email || !password) {
       setMessage("Please fill all fields.");
       setTimeout(() => setMessage(""), 3000);
@@ -125,8 +118,8 @@ function AdminPanel() {
 
     try {
       const url = editId
-        ? `${API_BASE_URL}/users/${editId}` // MODIFIED URL
-        : `${API_BASE_URL}/users`;          // MODIFIED URL
+        ? `${API_BASE_URL}/users/${editId}`
+        : `${API_BASE_URL}/users`;
       const method = editId ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -135,11 +128,11 @@ function AdminPanel() {
         body: JSON.stringify(ownerData),
       });
 
-      const responseData = await res.json(); // Try to parse JSON regardless of status for error messages
+      const responseData = await res.json();
       if (!res.ok) {
         throw new Error(responseData.message || `Failed to ${editId ? "update" : "add"} owner.`);
       }
-
+      
       setMessage(`Owner ${editId ? "updated" : "added"} successfully!`);
       fetchOwners();
       setEmail("");
@@ -159,33 +152,23 @@ function AdminPanel() {
 
   const handleEdit = (owner) => {
     setEmail(owner.email);
-    setPassword(owner.password);
+    setPassword(owner.password); 
     setEditId(owner.id);
     setShowPasswordInput(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' }); 
   };
 
   const handleDelete = async (id) => {
-    if (!API_BASE_URL) {
-        setMessage('API URL is not configured. Please check environment variables.');
-        console.error("REACT_APP_API_BASE_URL is not set");
-        return;
-    }
     if (!window.confirm("Are you sure you want to delete this owner?")) return;
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/users/${id}`, { method: "DELETE" }); // MODIFIED URL
+      const res = await fetch(`${API_BASE_URL}/users/${id}`, { method: "DELETE" });
       if (!res.ok) {
-        let errorData;
-        try {
-            errorData = await res.json();
-        } catch (jsonError) {
-            throw new Error(`Failed to delete owner: ${res.statusText}`);
-        }
+        const errorData = await res.json();
         throw new Error(errorData.message || "Failed to delete owner.");
       }
       setMessage("Owner deleted successfully.");
-      fetchOwners();
+      fetchOwners(); 
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
       console.error("Delete owner error:", error);
@@ -203,28 +186,13 @@ function AdminPanel() {
     }));
   };
 
-  if (!API_BASE_URL && accessGranted) { // Added a check for API_BASE_URL if access is granted
-    return (
-        <div className="admin-panel-page-wrapper">
-            <div className="admin-container">
-                <p className="admin-message error">
-                    Critical Error: API Base URL is not configured. Please contact support or check application settings.
-                </p>
-                <button className="admin-button logout" onClick={handleLogout}>
-                    Logout
-                </button>
-            </div>
-        </div>
-    );
-  }
-
   if (!accessGranted) {
     return (
       <div className="admin-access-page-wrapper">
         <div className="admin-access-container admin-animate-on-load">
           <svg width="48" height="40" viewBox="0 0 36 30" className="admin-logo-icon" aria-hidden="true">
-            <path d="M0 15 L14 0 L22 0 L8 15 Z" fill="#334155" />
-            <path d="M14 30 L28 15 L36 15 L22 30 Z" fill="#FF7F50" />
+            <path d="M0 15 L14 0 L22 0 L8 15 Z" fill="#334155"/>
+            <path d="M14 30 L28 15 L36 15 L22 30 Z" fill="#FF7F50"/>
           </svg>
           <h2 className="admin-access-heading">Admin Panel Access</h2>
           <p className="admin-access-subheading">Please enter the secret key to proceed.</p>
@@ -283,9 +251,9 @@ function AdminPanel() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
               />
-              <button
-                type="button"
-                className="password-toggle-btn"
+              <button 
+                type="button" 
+                className="password-toggle-btn" 
                 onClick={() => setShowPasswordInput(!showPasswordInput)}
                 aria-label={showPasswordInput ? "Hide password" : "Show password"}
                 disabled={isLoading}
@@ -297,14 +265,13 @@ function AdminPanel() {
               {isLoading ? <span className="spinner"></span> : (editId ? "Update Owner" : "Add Owner")}
             </button>
           </div>
-          {message && <p className={`admin-message ${message.includes("successfully") ? 'success' : (message.includes("Failed") || message.includes("fill all fields") || message.includes("Error:") ? 'error' : 'info')}`}>{message}</p>}
+          {message && <p className={`admin-message ${message.includes("successfully") ? 'success' : 'error'}`}>{message}</p>}
         </section>
 
         <section className="admin-section owner-list-section admin-animate-on-load" data-delay="200">
           <h3 className="admin-section-heading">Current Owners</h3>
           {isLoading && owners.length === 0 && <p className="loading-text">Loading owners...</p>}
-          {!isLoading && owners.length === 0 && accessGranted && API_BASE_URL && <p className="no-data-text">No owners found. Add one above!</p>}
-          {/* Message about missing API_BASE_URL is handled above, so this part only shows if everything is configured but no data */}
+          {!isLoading && owners.length === 0 && <p className="no-data-text">No owners found. Add one above!</p>}
           {owners.length > 0 && (
             <div className="admin-table-wrapper">
               <table className="admin-table">
@@ -323,13 +290,13 @@ function AdminPanel() {
                         <span>
                           {visiblePasswords[owner.id] ? owner.password : "••••••••"}
                         </span>
-                        <button
-                          type="button"
-                          className="password-toggle-btn table-eye-icon"
-                          onClick={() => toggleOwnerPasswordVisibility(owner.id)}
-                          aria-label={visiblePasswords[owner.id] ? "Hide password" : "Show password"}
+                        <button 
+                            type="button"
+                            className="table-eye-icon"
+                            onClick={() => toggleOwnerPasswordVisibility(owner.id)}
+                            aria-label={visiblePasswords[owner.id] ? "Hide password" : "Show password"}
                         >
-                          <EyeIcon Rendersolid={visiblePasswords[owner.id]} />
+                            <EyeIcon Rendersolid={visiblePasswords[owner.id]} />
                         </button>
                       </td>
                       <td data-label="Actions">
